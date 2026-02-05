@@ -65,27 +65,36 @@ export function initNav() {
     }
   });
 
-  // Touch swipe navigation
+  // Touch swipe navigation for section-to-section on larger screens
+  // On mobile, native scrolling handles horizontal movement within content
   const sectionContainer = document.querySelector('.section-container');
   if (sectionContainer) {
     let touchStartX = 0;
     let touchEndX = 0;
+    let touchStartY = 0;
 
     sectionContainer.addEventListener('touchstart', (e) => {
       touchStartX = e.changedTouches[0].screenX;
+      touchStartY = e.changedTouches[0].screenY;
     });
 
     sectionContainer.addEventListener('touchend', (e) => {
+      // On mobile, don't intercept swipes - let native scroll work
+      if (window.innerWidth <= 767) return;
+
       touchEndX = e.changedTouches[0].screenX;
-      handleSwipe();
+      const touchEndY = e.changedTouches[0].screenY;
+      handleSwipe(touchEndY);
     });
 
-    function handleSwipe() {
-      const swipeDistance = touchStartX - touchEndX;
+    function handleSwipe(touchEndY) {
+      const swipeDistanceX = touchStartX - touchEndX;
+      const swipeDistanceY = Math.abs(touchStartY - touchEndY);
       const threshold = 50;
 
-      if (Math.abs(swipeDistance) > threshold) {
-        if (swipeDistance > 0) {
+      // Only trigger section navigation if horizontal swipe is dominant
+      if (Math.abs(swipeDistanceX) > threshold && Math.abs(swipeDistanceX) > swipeDistanceY) {
+        if (swipeDistanceX > 0) {
           // Swipe left = next
           nextSection();
         } else {
@@ -128,6 +137,9 @@ function handleDelegatedClick(e) {
 
 // Delegated mousedown handler for drag handles
 function handleDelegatedMousedown(e) {
+  // On mobile (narrow screens), disable drag to allow native scroll
+  if (window.innerWidth <= 767) return;
+
   const handle = e.target.closest('.drag-handle');
   if (!handle) return;
   startDrag(e);
@@ -135,6 +147,9 @@ function handleDelegatedMousedown(e) {
 
 // Delegated touchstart handler for drag handles
 function handleDelegatedTouchstart(e) {
+  // On mobile (narrow screens), disable drag to allow native scroll
+  if (window.innerWidth <= 767) return;
+
   const handle = e.target.closest('.drag-handle');
   if (!handle) return;
   startDrag(e);
@@ -492,6 +507,9 @@ function renderDividerHTML(seg) {
 // Drag handlers now use event delegation (attached once in initNav)
 
 function startDrag(e) {
+  // Double-check: on mobile, don't allow drag - let native scroll work
+  if (window.innerWidth <= 767) return;
+
   e.preventDefault();
   e.stopPropagation();
 

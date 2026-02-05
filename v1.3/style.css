@@ -3053,6 +3053,150 @@ body {
   }
 }
 
+/* ============================================================
+   Mobile Touch-First Scrolling (<768px)
+   ============================================================ */
+
+@media (max-width: 767px) {
+  /* Hide arrow navigation buttons on mobile - use swipe instead */
+  .section-nav-btn {
+    display: none !important;
+  }
+
+  /* Enable horizontal scroll on case body */
+  .case-body {
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x proximity;
+    position: relative;
+  }
+
+  /* Section container fills and allows scroll */
+  .section-container {
+    min-width: 100%;
+    flex-shrink: 0;
+  }
+
+  /* Section content enables horizontal scroll */
+  .section-content {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    position: relative;
+  }
+
+  /* Case visual horizontal scroll */
+  .case-visual {
+    min-width: 500px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Shelf zoom rows horizontal scroll */
+  .case-visual.shelf-zoom {
+    min-width: 500px;
+  }
+
+  .shelf-zoom-rows {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Scroll indicator shadow on right edge */
+  .section-content::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 40px;
+    background: linear-gradient(to right, transparent, var(--bg-surface));
+    pointer-events: none;
+    z-index: 10;
+  }
+
+  /* Case body scroll indicator */
+  .case-body::after {
+    content: '';
+    position: fixed;
+    right: 0;
+    top: 0;
+    bottom: 60px; /* Above tab bar */
+    width: 30px;
+    background: linear-gradient(to right, transparent, rgba(18, 18, 16, 0.9));
+    pointer-events: none;
+    z-index: 15;
+    opacity: 1;
+    transition: opacity 0.2s;
+  }
+
+  /* Hide scroll indicator when not on case view */
+  .screen:not([data-screen="case-view"]) .case-body::after {
+    display: none;
+  }
+
+  /* Disable drag handles on mobile - prevent accidental resize */
+  .drag-handle {
+    display: none !important;
+  }
+
+  /* Make dividers non-interactive on mobile */
+  .addr-divider {
+    pointer-events: none;
+  }
+
+  .addr-divider.draggable {
+    cursor: default;
+  }
+
+  /* Equipment row horizontal scroll */
+  .equipment-row {
+    flex-direction: row !important;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    gap: 12px;
+    padding-bottom: 8px;
+    scroll-snap-type: x mandatory;
+  }
+
+  .equip-slot {
+    flex: 0 0 85vw;
+    min-width: 280px;
+    max-width: 320px;
+    scroll-snap-align: start;
+  }
+
+  /* Equipment row scroll indicator */
+  .screen[data-screen="equipment"]::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 40px;
+    background: linear-gradient(to right, transparent, var(--bg));
+    pointer-events: none;
+    z-index: 10;
+  }
+
+  .screen[data-screen="equipment"] {
+    position: relative;
+  }
+
+  /* Touch-friendly tap targets - prevent accidental selection during swipe */
+  .case-cell,
+  .addr-block,
+  .street-group {
+    touch-action: pan-x pan-y;
+  }
+
+  /* Case shelf cells container scroll */
+  .case-shelf-cells {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
 /* --- Edit Book Table: Sticky First Column --- */
 @media (max-width: 767px) {
   /* Ensure table has minimum width for readability */
