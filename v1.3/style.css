@@ -296,7 +296,7 @@ body {
   flex-direction: column;
   gap: 8px;
   padding-right: 16px; /* Clear space before wing divider */
-  overflow: hidden; /* Contain addresses within this wing */
+  min-width: max-content; /* Expand to fit all cells */
 }
 
 .case-wing:last-child {
@@ -373,7 +373,7 @@ body {
   border: 2px solid var(--amber-dim);
   border-radius: var(--radius);
   background: var(--bg);
-  overflow: hidden; /* Contain cell content within case boundaries */
+  min-width: max-content; /* Expand to fit all cells */
 }
 
 .case-shelf-row {
@@ -432,15 +432,13 @@ body {
 .case-shelf-cells {
   flex: 1;
   display: flex;
-  min-width: 0;
-  overflow: hidden; /* Contain addresses within shelf */
+  min-width: max-content; /* Expand to fit all cells */
 }
 
 .case-cell {
   position: relative;
   flex: 1;
-  min-width: 0;
-  overflow: hidden; /* Keep address text within cell boundaries */
+  min-width: 40px; /* Minimum cell width to fit addresses */
   /* No transition for performance — instant hover feedback */
 }
 
