@@ -264,6 +264,13 @@ body {
   color: var(--amber);
 }
 
+.cib-position {
+  font-weight: 600;
+  color: var(--amber);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
 /* Compact info bar for continuous wing view */
 .case-info-bar--compact {
   font-size: 14px;
@@ -280,7 +287,7 @@ body {
   flex-direction: row;
   flex-wrap: nowrap;
   gap: 0;
-  align-items: flex-start;
+  align-items: stretch; /* Align shelves across all wings */
 }
 
 .case-wing {
@@ -326,7 +333,7 @@ body {
   flex: 1;
   background: var(--amber);
   border-radius: 2px;
-  margin-top: 32px; /* Space for wing header alignment */
+  margin-top: 0; /* Removed: no wing-header to align with */
 }
 
 .wing-divider-label {
@@ -3254,7 +3261,7 @@ body {
 
   .wing-divider::before {
     width: 2px;
-    margin-top: 28px;
+    margin-top: 0; /* No wing-header to align with */
   }
 
   .wing-divider-label {

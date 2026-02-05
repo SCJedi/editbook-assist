@@ -285,10 +285,10 @@ function renderAllWingsContinuous() {
     sectionTitle.textContent = 'CASE VIEW';
   }
 
-  // Hide counter on mobile continuous view (all wings visible)
+  // Hide counter completely on mobile continuous view (all wings visible)
   const counterEl = document.querySelector('.case-header-counter');
   if (counterEl) {
-    counterEl.textContent = `${occupiedSlots.length} wings`;
+    counterEl.style.display = 'none';
   }
 
   // Build HTML for all wings in a continuous row
@@ -309,12 +309,7 @@ function renderAllWingsContinuous() {
     // Wing container
     allWingsHTML += `<div class="case-wing" data-wing-idx="${wingIdx}" data-slot-idx="${slotIdx}">`;
 
-    // Wing header label (only for first wing, others have divider labels)
-    if (wingIdx === 0) {
-      allWingsHTML += `<div class="wing-header">${positionName}</div>`;
-    }
-
-    // Info bar above the case
+    // Info bar above the case (includes position name for alignment)
     let reservedNotes = '';
     if (isLeftmost) reservedNotes += 'Form 3982';
     if (isRightmost) {
@@ -323,6 +318,7 @@ function renderAllWingsContinuous() {
     }
 
     allWingsHTML += `<div class="case-info-bar case-info-bar--compact">`;
+    allWingsHTML += `<span class="cib-item cib-position">${positionName}</span>`;
     allWingsHTML += `<span class="cib-item"><span class="cib-label">Type</span> ${esc(type)}</span>`;
     allWingsHTML += `<span class="cib-item"><span class="cib-label">Cells</span> ${spec.totalCells}</span>`;
     if (reservedNotes) allWingsHTML += `<span class="cib-item cib-reserved">${reservedNotes}</span>`;
@@ -503,6 +499,8 @@ function updateArrows() {
 function updateCounter() {
   const counterEl = document.querySelector('.case-header-counter');
   if (counterEl) {
+    // Show counter on desktop, hide on mobile (mobile shows all wings at once)
+    counterEl.style.display = '';
     if (occupiedSlots.length === 0) {
       counterEl.textContent = '0 / 0';
     } else {
@@ -550,9 +548,10 @@ function zoomIntoShelfContinuous(shelfNum) {
     sectionTitle.textContent = `SHELF ${shelfNum} — ALL WINGS`;
   }
 
+  // Hide counter on mobile shelf zoom view
   const counterEl = document.querySelector('.case-header-counter');
   if (counterEl) {
-    counterEl.textContent = `${occupiedSlots.length} wings`;
+    counterEl.style.display = 'none';
   }
 
   const ROW_LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -597,11 +596,6 @@ function zoomIntoShelfContinuous(shelfNum) {
 
     // Wing container
     allWingsHTML += `<div class="case-wing shelf-zoom-wing" data-wing-idx="${wingIdx}" data-slot-idx="${slotIdx}">`;
-
-    // Wing header (only for first wing)
-    if (wingIdx === 0) {
-      allWingsHTML += `<div class="wing-header">${positionName}</div>`;
-    }
 
     // Build the zoomed shelf rows for this wing
     const rowCount = Math.ceil(spec.cellsPerShelf / 10);
