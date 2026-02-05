@@ -2922,3 +2922,275 @@ body {
   color: #ff2222;
   background: rgba(255, 107, 107, 0.05);
 }
+
+/* ============================================================
+   Mobile Screen-Specific Fixes
+   ============================================================ */
+
+/* --- Landscape Prompt Overlay for Case View --- */
+.landscape-prompt {
+  display: none;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10;
+  background: rgba(0, 0, 0, 0.9);
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 24px;
+  text-align: center;
+}
+
+.landscape-prompt-icon {
+  font-size: 48px;
+  color: var(--amber);
+  animation: rotate-phone 2s ease-in-out infinite;
+}
+
+@keyframes rotate-phone {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-15deg); }
+  75% { transform: rotate(15deg); }
+}
+
+.landscape-prompt-text {
+  font-size: 18px;
+  color: var(--amber-bright);
+  letter-spacing: 2px;
+  line-height: 1.5;
+}
+
+.landscape-prompt-hint {
+  font-size: 14px;
+  color: var(--text-dim);
+  margin-top: 8px;
+}
+
+.landscape-prompt-dismiss {
+  margin-top: 16px;
+  padding: 12px 24px;
+  background: transparent;
+  border: 1px solid var(--amber-dim);
+  color: var(--amber);
+  font-family: var(--font);
+  font-size: 14px;
+  letter-spacing: 2px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.landscape-prompt-dismiss:hover,
+.landscape-prompt-dismiss:active {
+  background: rgba(218, 165, 32, 0.1);
+  border-color: var(--amber);
+}
+
+/* Show landscape prompt on small portrait screens for Case View */
+@media (max-width: 767px) and (orientation: portrait) {
+  .screen[data-screen="case-view"] .landscape-prompt {
+    display: flex;
+  }
+
+  .screen[data-screen="case-view"] .landscape-prompt.dismissed {
+    display: none;
+  }
+}
+
+/* --- Case View Mobile Landscape Mode --- */
+@media (max-width: 767px) and (orientation: landscape) {
+  /* In landscape, case view should fit better */
+  .screen[data-screen="case-view"] {
+    padding: 0;
+  }
+
+  .case-header-bar {
+    padding: 8px 12px;
+  }
+
+  .section-nav-btn {
+    width: 36px;
+  }
+
+  .case-shelf-label {
+    width: 40px;
+    font-size: 10px;
+  }
+
+  .shelf-zoom-icon {
+    font-size: 24px;
+  }
+}
+
+/* --- Case View Portrait: Enable scroll and scale --- */
+@media (max-width: 767px) and (orientation: portrait) {
+  /* Make case body scrollable in both directions */
+  .case-body {
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* The section container needs min-width to enable horizontal scroll */
+  .section-container {
+    min-width: 600px;
+  }
+
+  /* Keep nav buttons accessible */
+  .section-nav-btn {
+    position: sticky;
+    z-index: 5;
+  }
+
+  .section-nav-btn.prev {
+    left: 0;
+  }
+
+  .section-nav-btn.next {
+    right: 0;
+  }
+}
+
+/* --- Edit Book Table: Sticky First Column --- */
+@media (max-width: 767px) {
+  /* Ensure table has minimum width for readability */
+  #editBookTable {
+    min-width: 900px;
+  }
+
+  /* Sticky first two columns (Seq# and Primary Address) */
+  #editBookTable th:nth-child(1),
+  #editBookTable td:nth-child(1) {
+    position: sticky;
+    left: 0;
+    z-index: 3;
+    background: var(--bg);
+  }
+
+  #editBookTable th:nth-child(2),
+  #editBookTable td:nth-child(2) {
+    position: sticky;
+    left: 50px;
+    z-index: 3;
+    background: var(--bg);
+  }
+
+  /* Add shadow to indicate scroll */
+  #editBookTable th:nth-child(2)::after,
+  #editBookTable td:nth-child(2)::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: -8px;
+    bottom: 0;
+    width: 8px;
+    background: linear-gradient(to right, rgba(0,0,0,0.3), transparent);
+    pointer-events: none;
+  }
+
+  /* Adjust for row hover */
+  #editBookTable tr:hover td:nth-child(1),
+  #editBookTable tr:hover td:nth-child(2) {
+    background: rgba(218, 165, 32, 0.08);
+  }
+}
+
+/* --- Streets Screen Mobile --- */
+@media (max-width: 767px) {
+  .streets-list {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .street-row {
+    flex-wrap: wrap;
+    padding: 12px 0;
+    gap: 8px;
+  }
+
+  .street-row-name {
+    flex: 1 1 100%;
+    min-width: 100%;
+  }
+
+  .street-color-wrap {
+    flex: 1;
+    justify-content: flex-start;
+  }
+}
+
+/* --- Settings Screen Mobile --- */
+@media (max-width: 767px) {
+  .settings-section {
+    margin-bottom: 16px;
+  }
+
+  .settings-color-row {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .settings-color-label {
+    flex: 1 1 100%;
+  }
+}
+
+/* --- Equipment Screen Mobile Portrait --- */
+@media (max-width: 767px) and (orientation: portrait) {
+  .equipment-row {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    max-height: calc(100vh - 200px);
+    max-height: calc(100dvh - 200px);
+  }
+
+  .equip-body {
+    min-height: 120px;
+  }
+
+  /* Collapse equipment shelves visualization to save space */
+  .equip-shelves {
+    max-height: 100px;
+    overflow-y: auto;
+  }
+}
+
+/* --- General Mobile Touch Improvements --- */
+@media (max-width: 767px) {
+  /* Ensure all interactive elements have adequate touch targets */
+  .color-swatch {
+    min-width: 44px;
+    min-height: 44px;
+    width: 44px;
+    height: 44px;
+  }
+
+  /* Tag card actions need larger buttons on mobile */
+  .tag-card-actions button {
+    min-height: 44px;
+    padding: 10px 14px;
+  }
+
+  /* Highlight controls need better spacing */
+  .highlight-row {
+    flex-wrap: wrap;
+  }
+
+  .highlight-field {
+    flex: 1 1 auto;
+    min-width: 120px;
+  }
+
+  .highlight-notes-field {
+    flex: 1 1 100%;
+  }
+}
+
+/* --- Reduce motion for performance/accessibility --- */
+@media (prefers-reduced-motion: reduce) {
+  .landscape-prompt-icon {
+    animation: none;
+  }
+}

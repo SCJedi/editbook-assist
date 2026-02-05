@@ -105,7 +105,8 @@ document.addEventListener('DOMContentLoaded', () => {
   initCellPopup(refreshCurrentView);
   cleanupOrphans(getAddresses().map(a => a.id));
   initDataFile();
-  
+  initLandscapePrompt();
+
   // Register service worker for offline capability
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js')
@@ -125,6 +126,37 @@ document.addEventListener('DOMContentLoaded', () => {
       .catch(err => console.error('SW registration failed:', err));
   }
 });
+
+// ============================================================
+// Landscape Prompt (Mobile Case View)
+// ============================================================
+
+function initLandscapePrompt() {
+  const btn = document.getElementById('btnDismissLandscape');
+  const prompt = document.getElementById('landscapePrompt');
+  if (!btn || !prompt) return;
+
+  // Check if user has previously dismissed
+  const dismissed = localStorage.getItem('landscape-prompt-dismissed');
+  if (dismissed === 'true') {
+    prompt.classList.add('dismissed');
+  }
+
+  btn.addEventListener('click', () => {
+    prompt.classList.add('dismissed');
+    localStorage.setItem('landscape-prompt-dismissed', 'true');
+  });
+
+  // Reset dismissed state when orientation changes to landscape
+  // so prompt shows again if they go back to portrait
+  window.matchMedia('(orientation: landscape)').addEventListener('change', (e) => {
+    if (e.matches) {
+      // Went to landscape - keep dismissed
+    } else {
+      // Went to portrait - don't auto-show again if user dismissed
+    }
+  });
+}
 
 // ============================================================
 // Save Button
