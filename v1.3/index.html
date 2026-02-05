@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>EDIT BOOK ASSIST</title>
   <link rel="manifest" href="./manifest.json">
   <meta name="theme-color" content="#daa520">
@@ -14,6 +14,16 @@
 <body>
 
   <div class="app-container">
+
+    <!-- ===== MOBILE HEADER BAR (file actions) ===== -->
+    <header class="mobile-header">
+      <div class="mobile-header-title">EDIT BOOK ASSIST</div>
+      <div class="mobile-header-actions">
+        <button class="mobile-action-btn mobile-action-btn--danger" id="btnNewRouteMobile">NEW</button>
+        <button class="mobile-action-btn" id="btnSaveFileMobile">SAVE</button>
+        <button class="mobile-action-btn" id="btnOpenFileMobile">OPEN</button>
+      </div>
+    </header>
 
     <!-- ===== SIDEBAR NAV ===== -->
     <nav class="sidebar-nav">

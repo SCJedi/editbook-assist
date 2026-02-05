@@ -69,10 +69,23 @@ export function initDataFile() {
   const btnOpenFile = document.getElementById('btnOpenFile');
   const fileInput = document.getElementById('fileInput');
 
+  // Desktop sidebar buttons
   if (btnSaveFile) btnSaveFile.addEventListener('click', saveDataFile);
 
   if (btnOpenFile) {
     btnOpenFile.addEventListener('click', () => {
+      if (fileInput) fileInput.click();
+    });
+  }
+
+  // Mobile header buttons
+  const btnSaveFileMobile = document.getElementById('btnSaveFileMobile');
+  const btnOpenFileMobile = document.getElementById('btnOpenFileMobile');
+
+  if (btnSaveFileMobile) btnSaveFileMobile.addEventListener('click', saveDataFile);
+
+  if (btnOpenFileMobile) {
+    btnOpenFileMobile.addEventListener('click', () => {
       if (fileInput) fileInput.click();
     });
   }
@@ -202,12 +215,21 @@ export function loadDataFile(file) {
  */
 function initNewRoute() {
   const btnNewRoute = document.getElementById('btnNewRoute');
+  const btnNewRouteMobile = document.getElementById('btnNewRouteMobile');
   const dialog = document.getElementById('newRouteDialog');
   const btnCancel = document.getElementById('btnNewRouteCancel');
   const btnConfirm = document.getElementById('btnNewRouteConfirm');
 
+  // Desktop sidebar button
   if (btnNewRoute) {
     btnNewRoute.addEventListener('click', () => {
+      if (dialog) dialog.classList.add('active');
+    });
+  }
+
+  // Mobile header button
+  if (btnNewRouteMobile) {
+    btnNewRouteMobile.addEventListener('click', () => {
       if (dialog) dialog.classList.add('active');
     });
   }
