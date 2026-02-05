@@ -113,6 +113,30 @@ export function initNav() {
     sectionContent.addEventListener('touchstart', handleDelegatedTouchstart, { passive: false });
   }
 
+  // Re-render case view on resize (handles orientation change and mobile/desktop transition)
+  let lastWidth = window.innerWidth;
+  let resizeTimeout;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(() => {
+      const newWidth = window.innerWidth;
+      const crossedThreshold = (lastWidth <= 767 && newWidth > 767) || (lastWidth > 767 && newWidth <= 767);
+      lastWidth = newWidth;
+
+      // Only re-render if we crossed the mobile/desktop threshold and case view is active
+      if (crossedThreshold) {
+        const caseViewActive = document.querySelector('.screen[data-screen="case-view"]')?.classList.contains('active');
+        if (caseViewActive && occupiedSlots.length > 0) {
+          if (zoomedShelf !== null) {
+            zoomIntoShelf(zoomedShelf);
+          } else {
+            renderSection();
+          }
+        }
+      }
+    }, 150);
+  });
+
   // Set initial screen
   switchToScreen('equipment');
 }
@@ -229,6 +253,127 @@ export function refreshCurrentView(wasZoom) {
 function renderSection() {
   if (occupiedSlots.length === 0) return;
 
+  // On mobile, render all wings in one continuous scroll
+  if (window.innerWidth <= 767) {
+    renderAllWingsContinuous();
+    return;
+  }
+
+  // Desktop: single section at a time
+  renderSingleSection();
+}
+
+// Render all wings side-by-side for continuous horizontal scroll (mobile)
+function renderAllWingsContinuous() {
+  invalidateAnnotationsCache();
+
+  // Find leftmost and rightmost occupied slots
+  let leftmostIdx = null;
+  let rightmostIdx = null;
+  for (let i = 0; i < 4; i++) {
+    if (slots[i] !== null) {
+      if (leftmostIdx === null) leftmostIdx = i;
+      rightmostIdx = i;
+    }
+  }
+
+  const statusCellCount = RESERVED_STATUS_CODES.reduce((sum, code) => sum + code.width, 0);
+
+  // Update section title to show "CASE VIEW" since all wings are visible
+  const sectionTitle = document.querySelector('.case-header-title');
+  if (sectionTitle) {
+    sectionTitle.textContent = 'CASE VIEW';
+  }
+
+  // Hide counter on mobile continuous view (all wings visible)
+  const counterEl = document.querySelector('.case-header-counter');
+  if (counterEl) {
+    counterEl.textContent = `${occupiedSlots.length} wings`;
+  }
+
+  // Build HTML for all wings in a continuous row
+  let allWingsHTML = '<div class="case-wings-container">';
+
+  for (let wingIdx = 0; wingIdx < occupiedSlots.length; wingIdx++) {
+    const { slotIdx, type } = occupiedSlots[wingIdx];
+    const spec = EQUIPMENT_SPECS[type];
+    const positionName = POSITION_NAMES[slotIdx];
+    const isLeftmost = slotIdx === leftmostIdx;
+    const isRightmost = slotIdx === rightmostIdx;
+
+    // Add wing divider before all but the first wing
+    if (wingIdx > 0) {
+      allWingsHTML += `<div class="wing-divider"><span class="wing-divider-label">${positionName}</span></div>`;
+    }
+
+    // Wing container
+    allWingsHTML += `<div class="case-wing" data-wing-idx="${wingIdx}" data-slot-idx="${slotIdx}">`;
+
+    // Wing header label (only for first wing, others have divider labels)
+    if (wingIdx === 0) {
+      allWingsHTML += `<div class="wing-header">${positionName}</div>`;
+    }
+
+    // Info bar above the case
+    let reservedNotes = '';
+    if (isLeftmost) reservedNotes += 'Form 3982';
+    if (isRightmost) {
+      if (reservedNotes) reservedNotes += ' · ';
+      reservedNotes += `${statusCellCount} status`;
+    }
+
+    allWingsHTML += `<div class="case-info-bar case-info-bar--compact">`;
+    allWingsHTML += `<span class="cib-item"><span class="cib-label">Type</span> ${esc(type)}</span>`;
+    allWingsHTML += `<span class="cib-item"><span class="cib-label">Cells</span> ${spec.totalCells}</span>`;
+    if (reservedNotes) allWingsHTML += `<span class="cib-item cib-reserved">${reservedNotes}</span>`;
+    allWingsHTML += `</div>`;
+
+    // Build shelf rows
+    allWingsHTML += '<div class="case-visual">';
+    for (let shelfNum = SHELF_COUNT; shelfNum >= 1; shelfNum--) {
+      allWingsHTML += `<div class="case-shelf-row">`;
+      allWingsHTML += `<button class="case-shelf-label" data-shelf="${shelfNum}" data-wing-idx="${wingIdx}" title="Zoom into shelf ${shelfNum}">S${shelfNum}<span class="shelf-zoom-icon">&#x2315;</span></button>`;
+      allWingsHTML += `<div class="case-shelf-cells" data-cells="${spec.cellsPerShelf}">`;
+      allWingsHTML += buildShelfCellsHTML(shelfNum, spec.cellsPerShelf, wingIdx, isLeftmost, isRightmost);
+      allWingsHTML += `</div>`;
+      allWingsHTML += `</div>`;
+    }
+    allWingsHTML += '</div>';
+
+    allWingsHTML += '</div>'; // .case-wing
+  }
+
+  allWingsHTML += '</div>'; // .case-wings-container
+
+  const sectionContent = document.querySelector('.section-content');
+  if (sectionContent) {
+    sectionContent.innerHTML = allWingsHTML;
+
+    // Bind shelf label clicks for zoom
+    sectionContent.querySelectorAll('.case-shelf-label').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const shelfNum = parseInt(btn.dataset.shelf);
+        const wingIdx = parseInt(btn.dataset.wingIdx);
+        currentSection = wingIdx; // Set current section for zoom context
+        zoomIntoShelf(shelfNum);
+      });
+    });
+
+    // Add clickable class to overview blocks
+    sectionContent.querySelectorAll('.addr-block[data-addr-id]').forEach(block => {
+      if (!block.closest('.shelf-zoom-row')) {
+        block.classList.add('clickable');
+      }
+    });
+
+    applyAlertGlow();
+  }
+
+  updateArrows();
+}
+
+// Render a single section (desktop mode)
+function renderSingleSection() {
   invalidateAnnotationsCache();
 
   const { slotIdx, type } = occupiedSlots[currentSection];
@@ -376,6 +521,135 @@ function zoomIntoShelf(shelfNum) {
 
   invalidateAnnotationsCache();
 
+  // On mobile, render all wings' shelves continuously
+  if (window.innerWidth <= 767) {
+    zoomIntoShelfContinuous(shelfNum);
+    return;
+  }
+
+  // Desktop: single section zoom
+  zoomIntoShelfSingle(shelfNum);
+}
+
+// Mobile: zoom into shelf with all wings' same shelf shown side-by-side
+function zoomIntoShelfContinuous(shelfNum) {
+  // Find leftmost/rightmost for reserved logic
+  let leftmostIdx = null;
+  let rightmostIdx = null;
+  for (let i = 0; i < 4; i++) {
+    if (slots[i] !== null) {
+      if (leftmostIdx === null) leftmostIdx = i;
+      rightmostIdx = i;
+    }
+  }
+  const statusCellCount = RESERVED_STATUS_CODES.reduce((sum, code) => sum + code.width, 0);
+
+  // Update title
+  const sectionTitle = document.querySelector('.case-header-title');
+  if (sectionTitle) {
+    sectionTitle.textContent = `SHELF ${shelfNum} — ALL WINGS`;
+  }
+
+  const counterEl = document.querySelector('.case-header-counter');
+  if (counterEl) {
+    counterEl.textContent = `${occupiedSlots.length} wings`;
+  }
+
+  const ROW_LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+  // Build continuous zoomed shelf view for all wings
+  let allWingsHTML = '<div class="case-wings-container shelf-zoom-container">';
+
+  for (let wingIdx = 0; wingIdx < occupiedSlots.length; wingIdx++) {
+    const { slotIdx, type } = occupiedSlots[wingIdx];
+    const spec = EQUIPMENT_SPECS[type];
+    const positionName = POSITION_NAMES[slotIdx];
+    const isLeftmost = slotIdx === leftmostIdx;
+    const isRightmost = slotIdx === rightmostIdx;
+
+    // Calculate cellsBefore for this wing
+    let cellsBefore = 0;
+    for (let s = 1; s < shelfNum; s++) {
+      for (let i = 0; i < 4; i++) {
+        if (slots[i] !== null) {
+          cellsBefore += EQUIPMENT_SPECS[slots[i]].cellsPerShelf;
+        }
+      }
+    }
+    for (let i = 0; i < slotIdx; i++) {
+      if (slots[i] !== null) {
+        cellsBefore += EQUIPMENT_SPECS[slots[i]].cellsPerShelf;
+      }
+    }
+
+    // Calculate letter offset
+    let letterOffset = 0;
+    for (let i = 0; i < slotIdx; i++) {
+      if (slots[i] !== null) {
+        letterOffset += Math.ceil(EQUIPMENT_SPECS[slots[i]].cellsPerShelf / 10);
+      }
+    }
+
+    // Add wing divider before all but the first wing
+    if (wingIdx > 0) {
+      allWingsHTML += `<div class="wing-divider"><span class="wing-divider-label">${positionName}</span></div>`;
+    }
+
+    // Wing container
+    allWingsHTML += `<div class="case-wing shelf-zoom-wing" data-wing-idx="${wingIdx}" data-slot-idx="${slotIdx}">`;
+
+    // Wing header (only for first wing)
+    if (wingIdx === 0) {
+      allWingsHTML += `<div class="wing-header">${positionName}</div>`;
+    }
+
+    // Build the zoomed shelf rows for this wing
+    const rowCount = Math.ceil(spec.cellsPerShelf / 10);
+
+    allWingsHTML += '<div class="case-visual shelf-zoom">';
+
+    // Sidebar with row labels
+    allWingsHTML += '<div class="shelf-zoom-sidebar">';
+    allWingsHTML += `<button class="shelf-zoom-label zoom-out" data-wing-idx="${wingIdx}" title="Zoom out to case">S${shelfNum}-${ROW_LETTERS[letterOffset]}<span class="shelf-zoom-icon">&#x2315;</span></button>`;
+    for (let r = 1; r < rowCount; r++) {
+      allWingsHTML += `<div class="shelf-zoom-label">S${shelfNum}-${ROW_LETTERS[letterOffset + r]}</div>`;
+    }
+    allWingsHTML += '</div>';
+
+    // Cell rows
+    allWingsHTML += '<div class="shelf-zoom-rows">';
+    for (let r = 0; r < rowCount; r++) {
+      const rowStart = r * 10 + 1;
+      const rowEnd = Math.min(rowStart + 9, spec.cellsPerShelf);
+      allWingsHTML += `<div class="shelf-zoom-row" data-cells="${rowEnd - rowStart + 1}">`;
+      allWingsHTML += buildZoomRowCellsHTML(rowStart, rowEnd, shelfNum, wingIdx, isLeftmost, isRightmost, spec.cellsPerShelf, cellsBefore);
+      allWingsHTML += '</div>';
+    }
+    allWingsHTML += '</div>';
+
+    allWingsHTML += '</div>'; // .case-visual.shelf-zoom
+    allWingsHTML += '</div>'; // .case-wing
+  }
+
+  allWingsHTML += '</div>'; // .case-wings-container
+
+  const sectionContent = document.querySelector('.section-content');
+  if (sectionContent) {
+    sectionContent.innerHTML = allWingsHTML;
+
+    // Bind zoom-out buttons
+    sectionContent.querySelectorAll('.shelf-zoom-label.zoom-out').forEach(btn => {
+      btn.addEventListener('click', zoomOutOfShelf);
+    });
+
+    applyAlertGlow();
+  }
+
+  updateArrows();
+}
+
+// Desktop: zoom into a single section's shelf
+function zoomIntoShelfSingle(shelfNum) {
   const { slotIdx, type } = occupiedSlots[currentSection];
   const spec = EQUIPMENT_SPECS[type];
   const positionName = POSITION_NAMES[slotIdx];

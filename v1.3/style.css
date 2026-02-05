@@ -264,6 +264,89 @@ body {
   color: var(--amber);
 }
 
+/* Compact info bar for continuous wing view */
+.case-info-bar--compact {
+  font-size: 14px;
+  padding: 6px 10px;
+  gap: 6px 16px;
+}
+
+/* ============================================================
+   Continuous Wing Container (mobile horizontal scroll)
+   ============================================================ */
+
+.case-wings-container {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  gap: 0;
+  align-items: flex-start;
+}
+
+.case-wing {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.wing-header {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--amber);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 4px 8px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  text-align: center;
+}
+
+/* Wing Divider */
+.wing-divider {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 0 4px;
+  flex-shrink: 0;
+  align-self: stretch;
+}
+
+.wing-divider::before {
+  content: '';
+  width: 3px;
+  flex: 1;
+  background: var(--amber);
+  border-radius: 2px;
+  margin-top: 32px; /* Space for wing header alignment */
+}
+
+.wing-divider-label {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--amber);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 8px 2px;
+  background: var(--bg-surface);
+  border: 1px solid var(--amber-dim);
+  border-radius: 3px;
+  white-space: nowrap;
+}
+
+/* Shelf zoom within continuous container */
+.shelf-zoom-wing .case-visual.shelf-zoom {
+  border: none;
+}
+
+.shelf-zoom-container .wing-divider::before {
+  margin-top: 0;
+}
+
 /* ============================================================
    Case Visual — shelves with cell tick marks
    ============================================================ */
@@ -3142,6 +3225,48 @@ body {
 
   .shelf-zoom-row .addr-block {
     min-width: 70px;
+  }
+
+  /* Continuous wing container for mobile */
+  .case-wings-container {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    min-width: max-content;
+    gap: 0;
+  }
+
+  .case-wing {
+    flex: 0 0 auto;
+    min-width: max-content;
+  }
+
+  /* Wing divider styling for mobile */
+  .wing-divider {
+    padding: 0 6px;
+  }
+
+  .wing-divider::before {
+    width: 2px;
+    margin-top: 28px;
+  }
+
+  .wing-divider-label {
+    font-size: 10px;
+    padding: 6px 2px;
+  }
+
+  /* Wing header styling for mobile */
+  .wing-header {
+    font-size: 12px;
+    padding: 3px 6px;
+  }
+
+  /* Compact info bar for mobile */
+  .case-info-bar--compact {
+    font-size: 12px;
+    padding: 4px 8px;
+    gap: 4px 12px;
   }
 
   /* Scroll indicator shadow on right edge */
