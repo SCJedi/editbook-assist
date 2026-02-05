@@ -369,7 +369,7 @@ body {
   border: 2px solid var(--amber-dim);
   border-radius: var(--radius);
   background: var(--bg);
-  /* Expands to fit all cells */
+  overflow: hidden; /* Clip content at case border */
 }
 
 .case-shelf-row {
@@ -428,7 +428,7 @@ body {
 .case-shelf-cells {
   flex: 0 0 auto; /* Size to content, don't shrink */
   display: flex;
-  /* Expands to fit all cells */
+  overflow: hidden; /* Clip at shelf boundary */
 }
 
 .case-cell {
