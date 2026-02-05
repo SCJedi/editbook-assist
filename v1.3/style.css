@@ -433,8 +433,8 @@ body {
 
 .case-cell {
   position: relative;
-  flex: 0 0 50px; /* Fixed 50px per cell, no grow/shrink */
-  width: 50px;
+  flex: 0 0 55px; /* Fixed 55px per cell - fits 4-5 digit addresses */
+  width: 55px;
   overflow: hidden; /* Clip long addresses within cell */
   /* No transition for performance — instant hover feedback */
 }
@@ -3275,10 +3275,12 @@ body {
     display: none; /* Hide vertical label on mobile - just show thin line */
   }
 
-  /* Hide street names on mobile - too cluttered in zoomed view */
+  /* Hide street names on mobile - too cluttered */
   .addr-street,
-  .street-name {
-    display: none;
+  .street-name,
+  .shelf-zoom-row .addr-street,
+  .shelf-zoom-row .street-name {
+    display: none !important;
   }
 
   /* Wing header styling for mobile */
