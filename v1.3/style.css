@@ -3002,9 +3002,12 @@ body {
 
 /* --- Case View Mobile Landscape Mode --- */
 @media (max-width: 767px) and (orientation: landscape) {
-  /* In landscape, case view should fit better */
+  /* In landscape, case view with horizontal scroll */
   .screen[data-screen="case-view"] {
     padding: 0;
+    overflow-x: auto;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   .case-header-bar {
@@ -3016,26 +3019,37 @@ body {
   }
 
   .case-shelf-label {
-    width: 40px;
-    font-size: 10px;
+    width: 48px;
+    font-size: 12px;
   }
 
   .shelf-zoom-icon {
-    font-size: 24px;
+    font-size: 28px;
+  }
+
+  /* Keep case visual at natural size in landscape too */
+  .case-visual,
+  .case-visual.shelf-zoom,
+  .section-content,
+  .shelf-zoom-rows {
+    min-width: max-content;
+    width: max-content;
   }
 }
 
 /* --- Case View Portrait: Enable scroll and scale --- */
 @media (max-width: 767px) and (orientation: portrait) {
-  /* Make case body scrollable in both directions */
+  /* Case body scrollable - content stays full size */
   .case-body {
-    overflow: auto;
+    overflow-x: auto;
+    overflow-y: auto;
     -webkit-overflow-scrolling: touch;
   }
 
-  /* The section container needs min-width to enable horizontal scroll */
+  /* Section container stays natural width - no shrinking */
   .section-container {
-    min-width: 600px;
+    min-width: max-content;
+    width: max-content;
   }
 
   /* Keep nav buttons accessible */
@@ -3055,6 +3069,7 @@ body {
 
 /* ============================================================
    Mobile Touch-First Scrolling (<768px)
+   Full-size case view with horizontal scroll
    ============================================================ */
 
 @media (max-width: 767px) {
@@ -3063,43 +3078,70 @@ body {
     display: none !important;
   }
 
-  /* Enable horizontal scroll on case body */
+  /* Case body: horizontal scroll container at full size */
   .case-body {
     overflow-x: auto;
-    overflow-y: hidden;
+    overflow-y: auto;
     -webkit-overflow-scrolling: touch;
-    scroll-snap-type: x proximity;
     position: relative;
   }
 
-  /* Section container fills and allows scroll */
+  /* Section container: natural width, no shrinking */
   .section-container {
-    min-width: 100%;
+    min-width: max-content;
+    width: max-content;
     flex-shrink: 0;
   }
 
-  /* Section content enables horizontal scroll */
+  /* Section content: natural width, scrollable */
   .section-content {
     overflow-x: auto;
+    overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     position: relative;
+    min-width: max-content;
+    width: max-content;
   }
 
-  /* Case visual horizontal scroll */
+  /* Case visual: natural full size, no shrinking */
   .case-visual {
-    min-width: 500px;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
+    min-width: max-content;
+    width: max-content;
   }
 
-  /* Shelf zoom rows horizontal scroll */
+  /* Shelf zoom: natural full size */
   .case-visual.shelf-zoom {
-    min-width: 500px;
+    min-width: max-content;
+    width: max-content;
   }
 
   .shelf-zoom-rows {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
+    min-width: max-content;
+    width: max-content;
+  }
+
+  /* Case shelf cells: keep natural width */
+  .case-shelf-cells {
+    min-width: max-content;
+  }
+
+  /* Cells stay full readable size - no shrinking */
+  .case-cell {
+    min-width: 40px; /* Minimum readable cell width */
+  }
+
+  /* Address blocks stay full size */
+  .addr-block {
+    min-width: 50px; /* Minimum readable address width */
+  }
+
+  /* Shelf zoom cells larger for readability */
+  .shelf-zoom-row .case-cell {
+    min-width: 60px;
+  }
+
+  .shelf-zoom-row .addr-block {
+    min-width: 70px;
   }
 
   /* Scroll indicator shadow on right edge */
@@ -3188,12 +3230,6 @@ body {
   .addr-block,
   .street-group {
     touch-action: pan-x pan-y;
-  }
-
-  /* Case shelf cells container scroll */
-  .case-shelf-cells {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
   }
 }
 
