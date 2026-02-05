@@ -296,7 +296,7 @@ body {
   flex-direction: column;
   gap: 8px;
   padding-right: 16px; /* Clear space before wing divider */
-  min-width: max-content; /* Expand to fit all cells */
+  overflow: hidden; /* Contain content within wing */
 }
 
 .case-wing:last-child {
@@ -373,7 +373,7 @@ body {
   border: 2px solid var(--amber-dim);
   border-radius: var(--radius);
   background: var(--bg);
-  min-width: max-content; /* Expand to fit all cells */
+  overflow: hidden; /* Contain cells within case border */
 }
 
 .case-shelf-row {
@@ -432,13 +432,14 @@ body {
 .case-shelf-cells {
   flex: 1;
   display: flex;
-  min-width: max-content; /* Expand to fit all cells */
+  overflow: hidden; /* Contain cells within shelf */
 }
 
 .case-cell {
   position: relative;
-  flex: 1;
-  min-width: 40px; /* Minimum cell width to fit addresses */
+  flex: 1 1 50px; /* Equal share, minimum 50px per cell */
+  min-width: 50px;
+  overflow: hidden; /* Contain address within cell */
   /* No transition for performance — instant hover feedback */
 }
 
@@ -674,6 +675,9 @@ body {
   color: var(--amber-bright);
   line-height: 1.1;
   white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .addr-unit {
@@ -682,6 +686,9 @@ body {
   color: var(--amber-bright);
   line-height: 1.1;
   white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Street name shown inside a standalone (non-grouped) address
