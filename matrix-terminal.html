@@ -1,0 +1,1637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Matrix Terminal</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #1a1a1a;
+            overflow: hidden;
+            font-family: 'Courier New', monospace;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            user-select: none;
+        }
+
+        .monitor {
+            position: relative;
+            background:
+                repeating-linear-gradient(
+                    90deg,
+                    transparent,
+                    transparent 2px,
+                    rgba(255,255,255,0.008) 2px,
+                    rgba(255,255,255,0.008) 4px
+                ),
+                linear-gradient(180deg, #2d2d2d 0%, #252525 50%, #2a2a2a 100%);
+            border-radius: 18px;
+            padding: 28px 28px 8px 28px;
+            box-shadow:
+                0 0 0 2px #1a1a1a,
+                0 0 0 4px #3a3a3a,
+                inset 0 2px 4px rgba(255,255,255,0.05),
+                0 20px 60px rgba(0,0,0,0.7),
+                0 0 80px rgba(0,0,0,0.5);
+            width: 85vw;
+            max-width: 1200px;
+            aspect-ratio: 4 / 3;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .monitor::before {
+            content: '';
+            position: absolute;
+            inset: 3px;
+            border-radius: 16px;
+            border: 1px solid #444;
+            border-bottom-color: #222;
+            border-right-color: #222;
+            pointer-events: none;
+        }
+
+        .screen {
+            position: relative;
+            flex: 1;
+            background: #000;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow:
+                inset 0 0 30px rgba(0,0,0,1),
+                inset 0 0 4px rgba(0,0,0,0.8);
+            border: 2px solid #111;
+        }
+
+        .screen::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 2px,
+                rgba(0, 0, 0, 0.08) 2px,
+                rgba(0, 0, 0, 0.08) 4px
+            );
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        .screen::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background:
+                radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.35) 100%),
+                linear-gradient(135deg, rgba(255,255,255,0.03) 0%, transparent 50%, rgba(0,0,0,0.05) 100%);
+            pointer-events: none;
+            z-index: 3;
+            border-radius: 6px;
+        }
+
+        #matrix-canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            background: #000;
+        }
+
+        .monitor-chin {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 16px 6px;
+            height: 58px;
+        }
+
+        .monitor-brand {
+            color: #555;
+            font-size: 11px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+        }
+
+        .chin-controls {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .knob-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+        }
+
+        .knob-label {
+            color: #555;
+            font-size: 8px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .knob-outer {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 40% 35%, #555, #222);
+            box-shadow:
+                0 1px 3px rgba(0,0,0,0.6),
+                inset 0 1px 1px rgba(255,255,255,0.1);
+            cursor: grab;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .knob-outer:active {
+            cursor: grabbing;
+        }
+
+        .knob-inner {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 40% 35%, #444, #1a1a1a);
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.5);
+            position: relative;
+        }
+
+        .knob-indicator {
+            position: absolute;
+            top: 2px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 2px;
+            height: 6px;
+            background: #888;
+            border-radius: 1px;
+        }
+
+        .power-led {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #00cc00;
+            box-shadow: 0 0 6px #00ff00;
+            transition: all 0.3s;
+        }
+
+        .power-led.off {
+            background: #333;
+            box-shadow: none;
+        }
+
+        .stand {
+            width: 120px;
+            height: 30px;
+            background: linear-gradient(180deg, #333, #2a2a2a);
+            margin: 0 auto;
+            border-radius: 0 0 4px 4px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+        }
+
+        .stand-base {
+            width: 180px;
+            height: 10px;
+            background: linear-gradient(180deg, #2a2a2a, #222);
+            margin: 0 auto;
+            border-radius: 0 0 8px 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+
+        .chin-btn {
+            background: #1a1a1a;
+            border: 1px solid #444;
+            color: #666;
+            font-family: 'Courier New', monospace;
+            font-size: 9px;
+            padding: 4px 8px;
+            cursor: pointer;
+            border-radius: 3px;
+            letter-spacing: 1px;
+            transition: all 0.2s;
+        }
+
+        .chin-btn:hover {
+            border-color: #888;
+            color: #aaa;
+        }
+
+        .chin-btn.active {
+            color: #fff;
+            border-color: #666;
+        }
+
+        .gear-btn {
+            background: none;
+            border: none;
+            color: #444;
+            font-size: 14px;
+            cursor: pointer;
+            padding: 2px 4px;
+            transition: all 0.3s;
+        }
+
+        .gear-btn:hover {
+            color: #888;
+            transform: rotate(30deg);
+        }
+
+        /* Settings Panel */
+        .settings-backdrop {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 100;
+        }
+
+        .settings-backdrop.open {
+            display: block;
+        }
+
+        .settings-panel {
+            position: fixed;
+            top: 0;
+            right: -360px;
+            width: 340px;
+            height: 100vh;
+            background: rgba(10, 10, 10, 0.97);
+            border-left: 2px solid hsl(120, 100%, 40%);
+            z-index: 101;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            color: hsl(120, 100%, 45%);
+            transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            padding: 0;
+        }
+
+        .settings-panel.open {
+            right: 0;
+        }
+
+        .settings-panel::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .settings-panel::-webkit-scrollbar-track {
+            background: #111;
+        }
+
+        .settings-panel::-webkit-scrollbar-thumb {
+            background: #333;
+            border-radius: 3px;
+        }
+
+        .settings-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px;
+            border-bottom: 1px solid #222;
+        }
+
+        .settings-header h2 {
+            font-size: 14px;
+            letter-spacing: 3px;
+            margin: 0;
+        }
+
+        .settings-close {
+            background: none;
+            border: none;
+            color: inherit;
+            font-size: 18px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            padding: 2px 6px;
+            transition: color 0.2s;
+        }
+
+        .settings-close:hover {
+            color: #fff;
+        }
+
+        .settings-section {
+            padding: 14px 20px;
+            border-bottom: 1px solid #1a1a1a;
+        }
+
+        .settings-section h3 {
+            font-size: 10px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+            opacity: 0.7;
+        }
+
+        .settings-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .settings-row label {
+            font-size: 11px;
+            flex-shrink: 0;
+            min-width: 110px;
+        }
+
+        .settings-row .slider-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex: 1;
+            justify-content: flex-end;
+        }
+
+        .settings-row input[type="range"] {
+            width: 110px;
+            accent-color: hsl(120, 100%, 45%);
+            cursor: pointer;
+        }
+
+        .settings-row .slider-val {
+            font-size: 10px;
+            min-width: 32px;
+            text-align: right;
+            opacity: 0.8;
+        }
+
+        .settings-row select {
+            background: #111;
+            color: inherit;
+            border: 1px solid #333;
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            padding: 4px 6px;
+            cursor: pointer;
+            flex: 1;
+            margin-right: 8px;
+        }
+
+        .settings-row select option {
+            background: #111;
+        }
+
+        .settings-btn {
+            background: #111;
+            border: 1px solid #333;
+            color: inherit;
+            font-family: 'Courier New', monospace;
+            font-size: 10px;
+            padding: 4px 10px;
+            cursor: pointer;
+            letter-spacing: 1px;
+            transition: all 0.2s;
+        }
+
+        .settings-btn:hover {
+            border-color: #666;
+            color: #fff;
+        }
+
+        .version-toggle-group {
+            display: flex;
+            gap: 4px;
+        }
+
+        .version-toggle-group .settings-btn.active {
+            background: #222;
+            border-color: currentColor;
+            color: #fff;
+        }
+
+        .color-preview {
+            width: 16px;
+            height: 16px;
+            border-radius: 3px;
+            border: 1px solid #333;
+            flex-shrink: 0;
+        }
+
+        .settings-footer {
+            padding: 14px 20px;
+            font-size: 9px;
+            opacity: 0.5;
+            line-height: 1.6;
+        }
+
+        .settings-footer .shortcuts-hint {
+            margin-bottom: 10px;
+        }
+
+        .fps-counter {
+            position: fixed;
+            top: 16px;
+            left: 16px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 6px 10px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            color: #0f0;
+            border: 1px solid rgba(0, 255, 0, 0.2);
+            z-index: 100;
+            user-select: none;
+        }
+        .fps-counter.warning { color: #fa0; border-color: rgba(255,170,0,0.3); }
+        .fps-counter.critical { color: #f00; border-color: rgba(255,0,0,0.3); }
+
+        body.fullscreen-mode .monitor {
+            width: 100vw;
+            height: 100vh;
+            max-width: none;
+            padding: 0;
+            border-radius: 0;
+            box-shadow: none;
+            background: #000;
+            aspect-ratio: unset;
+        }
+        body.fullscreen-mode .monitor::before { display: none; }
+        body.fullscreen-mode .screen {
+            border-radius: 0;
+            border: none;
+            box-shadow: none;
+        }
+        body.fullscreen-mode .monitor-chin,
+        body.fullscreen-mode .stand,
+        body.fullscreen-mode .stand-base { display: none; }
+        body.fullscreen-mode .screen::before,
+        body.fullscreen-mode .screen::after { border-radius: 0; }
+    </style>
+</head>
+<body>
+    <div style="display:flex;flex-direction:column;align-items:center;">
+        <div class="monitor">
+            <div class="screen">
+                <canvas id="matrix-canvas"></canvas>
+            </div>
+            <div class="monitor-chin">
+                <span class="monitor-brand">Matrix Corp</span>
+                <div class="chin-controls">
+                    <div class="knob-group">
+                        <div class="knob-outer" id="knob-hue" data-value="0.333" data-param="hue">
+                            <div class="knob-inner">
+                                <div class="knob-indicator"></div>
+                            </div>
+                        </div>
+                        <span class="knob-label">Color</span>
+                    </div>
+                    <div class="knob-group">
+                        <div class="knob-outer" id="knob-speed" data-value="0.2" data-param="speed">
+                            <div class="knob-inner">
+                                <div class="knob-indicator"></div>
+                            </div>
+                        </div>
+                        <span class="knob-label">Speed</span>
+                    </div>
+                    <button class="chin-btn" id="version-btn">V2</button>
+                    <button class="chin-btn" id="toggle-btn">STOP</button>
+                    <div class="power-led" id="power-led"></div>
+                    <button class="gear-btn" id="settings-gear">⚙</button>
+                </div>
+            </div>
+        </div>
+        <div class="stand"></div>
+        <div class="stand-base"></div>
+    </div>
+
+    <div class="fps-counter" id="fps-counter" style="display:none;">
+        <span id="fps-value">60</span> FPS
+    </div>
+
+    <!-- Settings Panel -->
+    <div class="settings-backdrop" id="settings-backdrop"></div>
+    <div class="settings-panel" id="settings-panel">
+        <div class="settings-header">
+            <h2>SETTINGS</h2>
+            <button class="settings-close" id="settings-close">X</button>
+        </div>
+
+        <!-- Presets -->
+        <div class="settings-section">
+            <h3>Presets</h3>
+            <div class="settings-row">
+                <select id="preset-select">
+                    <option value="0">Classic Green</option>
+                    <option value="1">Film Accurate</option>
+                    <option value="2">Cyberpunk</option>
+                    <option value="3">Amber Terminal</option>
+                    <option value="4">Minimal</option>
+                    <option value="5">Heavy Rain</option>
+                </select>
+                <button class="settings-btn" id="preset-load">Load</button>
+            </div>
+        </div>
+
+        <!-- Animation -->
+        <div class="settings-section">
+            <h3>Animation</h3>
+            <div class="settings-row">
+                <label>Version</label>
+                <div class="version-toggle-group">
+                    <button class="settings-btn active" id="sp-v1-btn">V1</button>
+                    <button class="settings-btn" id="sp-v2-btn">V2</button>
+                </div>
+            </div>
+            <div class="settings-row">
+                <label>Speed</label>
+                <div class="slider-wrap">
+                    <input type="range" id="slider-speed" min="0.1" max="5.0" step="0.1" value="1.9">
+                    <span class="slider-val" id="val-speed">1.9</span>
+                </div>
+            </div>
+            <div class="settings-row">
+                <label>Trail Density</label>
+                <div class="slider-wrap">
+                    <input type="range" id="slider-density" min="1" max="5" step="1" value="3">
+                    <span class="slider-val" id="val-density">3</span>
+                </div>
+            </div>
+            <div class="settings-row">
+                <label>Mutation Rate</label>
+                <div class="slider-wrap">
+                    <input type="range" id="slider-mutation" min="0" max="3" step="0.1" value="1.0">
+                    <span class="slider-val" id="val-mutation">1.0</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Color -->
+        <div class="settings-section">
+            <h3>Color</h3>
+            <div class="settings-row">
+                <label>Hue</label>
+                <div class="slider-wrap">
+                    <input type="range" id="slider-hue" min="0" max="360" step="1" value="120">
+                    <span class="slider-val" id="val-hue">120</span>
+                    <div class="color-preview" id="color-preview" style="background:hsl(120,100%,45%)"></div>
+                </div>
+            </div>
+            <div class="settings-row">
+                <label>Head Brightness</label>
+                <div class="slider-wrap">
+                    <input type="range" id="slider-headbright" min="50" max="100" step="1" value="88">
+                    <span class="slider-val" id="val-headbright">88%</span>
+                </div>
+            </div>
+            <div class="settings-row">
+                <label>Glow Intensity</label>
+                <div class="slider-wrap">
+                    <input type="range" id="slider-glow" min="0" max="3" step="0.1" value="1.0">
+                    <span class="slider-val" id="val-glow">1.0</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Effects -->
+        <div class="settings-section">
+            <h3>Effects</h3>
+            <div class="settings-row">
+                <label>Scanline Opacity</label>
+                <div class="slider-wrap">
+                    <input type="range" id="slider-scanline" min="0" max="0.20" step="0.01" value="0.08">
+                    <span class="slider-val" id="val-scanline">8%</span>
+                </div>
+            </div>
+            <div class="settings-row">
+                <label>Font Size</label>
+                <div class="slider-wrap">
+                    <input type="range" id="slider-fontsize" min="14" max="40" step="1" value="26">
+                    <span class="slider-val" id="val-fontsize">26px</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="settings-footer">
+            <div class="shortcuts-hint">
+                S: settings &nbsp; Space: start/stop &nbsp; V: version<br>
+                F: fullscreen &nbsp; Shift+F: FPS counter<br>
+                Esc: close &nbsp; 1-6: load preset
+            </div>
+            <button class="settings-btn" id="reset-defaults">Reset Defaults</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('matrix-canvas');
+        const ctx = canvas.getContext('2d');
+        const toggleBtn = document.getElementById('toggle-btn');
+        const versionBtn = document.getElementById('version-btn');
+        const powerLed = document.getElementById('power-led');
+
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#$%^&*()_+-=[]{}|;:,.<>?/~`ｦｱｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ';
+        let fontSize = 26;
+        const PHI = (1 + Math.sqrt(5)) / 2; // golden ratio 1.618...
+
+        // Fibonacci sequence for tail length selection
+        const FIB = [5, 8, 8, 13, 13, 21, 34, 55];
+
+        // Box-Muller Gaussian random: mean, stddev
+        function gaussRand(mean, std) {
+            let u = 0, v = 0;
+            while (u === 0) u = Math.random();
+            while (v === 0) v = Math.random();
+            const n = Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+            return mean + n * std;
+        }
+
+        // Pick a Fibonacci tail length with Gaussian weighting toward the middle of the sequence
+        function fibTailLen() {
+            // Gaussian centered on index 3 (fib=13), stddev 1.8
+            let idx = Math.round(gaussRand(3, 1.8));
+            idx = Math.max(0, Math.min(FIB.length - 1, idx));
+            return FIB[idx];
+        }
+
+        let hue = 120;
+        let speedMult = 1.0;
+        let animationRunning = true;
+        let animationId;
+        let currentVersion = 1; // 1 = classic, 2 = faithful
+
+        // Performance optimizations: typed array pools
+        let v2DistPool = null;
+        let v2TailPool = null;
+        let v2MatPool = null;
+
+        // Performance optimizations: offscreen canvas for glow
+        let offscreenCanvas = null;
+        let offscreenCtx = null;
+
+        // Settings object (must be declared before buildColorLUT which references it)
+        const settings = {
+            version: 1,
+            hue: 120,
+            speed: 1.9,
+            density: 3,
+            mutationRate: 1.0,
+            headBrightness: 88,
+            glowIntensity: 1.0,
+            scanlineOpacity: 0.08,
+            fontSize: 26
+        };
+
+        // Performance optimizations: pre-computed color LUTs
+        let colorLUT = {
+            headColor: '',
+            headShadow: '',
+            near1Color: '',
+            near1Shadow: '',
+            near2Color: '',
+            tailColors: [] // 25 levels of tail colors
+        };
+
+        function resizeCanvas() {
+            const rect = canvas.parentElement.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+        }
+        resizeCanvas();
+
+        // Performance optimization: Build color lookup tables
+        function buildColorLUT() {
+            // V2 head colors — headBrightness from settings
+            const hb = settings.headBrightness;
+            colorLUT.headColor = `hsla(${hue}, 30%, ${hb}%, 1.0)`;
+            colorLUT.headShadow = `hsla(${hue}, 100%, 75%, 0.9)`;
+
+            // V2 near-head colors (d=1 and d=2)
+            colorLUT.near1Color = `hsla(${hue}, 100%, 55%, 1.0)`;
+            colorLUT.near1Shadow = `hsla(${hue}, 100%, 50%, 0.5)`;
+            colorLUT.near2Color = `hsla(${hue}, 100%, 50%, 1.0)`;
+
+            // V2 tail colors: 25 levels using golden ratio fade
+            colorLUT.tailColors = [];
+            for (let i = 0; i < 25; i++) {
+                const t = i / 24;
+                const fade = Math.pow(1 / PHI, t * 3);
+                const lightness = Math.max(6, Math.round(8 + 35 * fade));
+                const alpha = Math.max(0, fade * 0.95);
+                colorLUT.tailColors.push({ lightness, alpha });
+            }
+        }
+        buildColorLUT();
+
+        // =============================================
+        //  V1 — Classic fast screensaver rain
+        // =============================================
+        let v1Columns, v1Drops = [], v1Speeds = [];
+
+        function v1Init() {
+            v1Columns = Math.floor(canvas.width / fontSize);
+            v1Drops = [];
+            v1Speeds = [];
+            for (let i = 0; i < v1Columns; i++) {
+                v1Drops[i] = Math.floor(Math.random() * canvas.height / fontSize) * -1;
+                v1Speeds[i] = 0.5 + Math.random() * 1.5;
+            }
+        }
+
+        function v1Draw() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.08)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.font = fontSize + 'px Courier New';
+            const v1gi = settings.glowIntensity;
+
+            for (let i = 0; i < v1Drops.length; i++) {
+                const char = chars[Math.floor(Math.random() * chars.length)];
+                const x = i * fontSize;
+                const y = v1Drops[i] * fontSize;
+                const lightness = Math.floor(Math.random() * 40 + 30);
+
+                ctx.shadowBlur = 4 * v1gi;
+                ctx.shadowColor = `hsla(${hue}, 100%, ${lightness}%, 0.6)`;
+                ctx.fillStyle = `hsl(${hue}, 100%, ${lightness}%)`;
+                ctx.fillText(char, x, y);
+
+                if (y > canvas.height && Math.random() > 0.975) {
+                    v1Drops[i] = 0;
+                }
+                v1Drops[i] += v1Speeds[i] * speedMult;
+            }
+        }
+
+        // =============================================
+        //  V2 — Faithful Matrix: multi-stream per column
+        // =============================================
+        //  Each column holds an ARRAY of streams (2-3 can overlap).
+        //  Tail lengths picked from Fibonacci sequence via Gaussian.
+        //  Speeds are Gaussian-distributed. Fade uses golden ratio curve.
+        //  Grid stores array of { char, streamId } per cell for layering.
+
+        let v2Cols, v2Rows;
+        let v2Grid;       // [col][row] = { char } or null  (latest writer wins for render)
+        let v2Streams;    // [col] = array of stream objects
+
+        let V2_MAX_STREAMS_PER_COL = 3;
+
+        function v2Init() {
+            v2Cols = Math.floor(canvas.width / fontSize);
+            v2Rows = Math.floor(canvas.height / fontSize) + 1;
+            v2Grid = [];
+            v2Streams = [];
+
+            // Performance optimization: allocate typed array pools
+            const poolSize = v2Cols * v2Rows;
+            v2DistPool = new Float32Array(poolSize);
+            v2TailPool = new Uint8Array(poolSize);
+            v2MatPool = new Float32Array(poolSize);
+
+            // Performance optimization: create offscreen canvas for glow
+            offscreenCanvas = document.createElement('canvas');
+            offscreenCanvas.width = canvas.width;
+            offscreenCanvas.height = canvas.height;
+            offscreenCtx = offscreenCanvas.getContext('2d');
+            offscreenCtx.font = fontSize + 'px Courier New';
+
+            for (let c = 0; c < v2Cols; c++) {
+                v2Grid[c] = [];
+                for (let r = 0; r < v2Rows; r++) {
+                    v2Grid[c][r] = null;
+                }
+                v2Streams[c] = [];
+                // Spawn 1-2 initial streams per column staggered
+                const count = Math.random() < 0.6 ? 2 : 1;
+                for (let s = 0; s < count; s++) {
+                    v2Streams[c].push(v2MakeStream(true));
+                }
+            }
+        }
+
+        function v2MakeStream(initialSpawn) {
+            // Gaussian speed: mean 0.28, stddev 0.08, clamped
+            const spd = Math.max(0.1, Math.min(0.5, gaussRand(0.28, 0.08)));
+            const startRow = initialSpawn ? -Math.floor(Math.random() * v2Rows * 0.6) : -1;
+            return {
+                headRow: startRow,
+                startRow: startRow,         // where it began — for maturity calc
+                tailLen: fibTailLen(),
+                speed: spd,
+                accum: 0,
+                idle: initialSpawn ? Math.floor(Math.random() * 30) : (3 + Math.floor(Math.random() * 25)),
+                active: initialSpawn ? Math.random() < 0.85 : false,
+                dead: false
+            };
+        }
+
+        function v2RandomChar() {
+            return chars[Math.floor(Math.random() * chars.length)];
+        }
+
+        function v2Draw() {
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.font = fontSize + 'px Courier New';
+
+            // Performance optimization: clear offscreen canvas
+            offscreenCtx.fillStyle = '#000';
+            offscreenCtx.fillRect(0, 0, canvas.width, canvas.height);
+
+            const effSpeed = speedMult;
+
+            // Performance optimization: use pooled typed arrays instead of allocating
+            // Fill with default values
+            v2DistPool.fill(9999);
+            v2TailPool.fill(0);
+            v2MatPool.fill(0);
+
+            // Create column views for easier access (no extra allocation, just indexing)
+            const distMap = [];
+            const tailMap = [];
+            const matMap = [];
+            for (let c = 0; c < v2Cols; c++) {
+                const offset = c * v2Rows;
+                distMap[c] = v2DistPool.subarray(offset, offset + v2Rows);
+                tailMap[c] = v2TailPool.subarray(offset, offset + v2Rows);
+                matMap[c] = v2MatPool.subarray(offset, offset + v2Rows);
+            }
+
+            // Update all streams
+            for (let c = 0; c < v2Cols; c++) {
+                const streams = v2Streams[c];
+
+                for (let si = streams.length - 1; si >= 0; si--) {
+                    const s = streams[si];
+
+                    if (!s.active) {
+                        s.idle--;
+                        if (s.idle <= 0) {
+                            s.active = true;
+                            s.headRow = -1;
+                            s.startRow = -1;
+                            s.tailLen = fibTailLen();
+                            s.speed = Math.max(0.1, Math.min(0.5, gaussRand(0.28, 0.08)));
+                        }
+                        continue;
+                    }
+
+                    const prevHead = Math.floor(s.headRow);
+
+                    // Advance head
+                    s.accum += s.speed * effSpeed;
+                    while (s.accum >= 1) {
+                        s.accum -= 1;
+                        s.headRow++;
+                    }
+
+                    const curHead = Math.floor(s.headRow);
+
+                    // Place NEW characters only at rows the head just crossed
+                    for (let r = prevHead + 1; r <= curHead; r++) {
+                        if (r >= 0 && r < v2Rows) {
+                            v2Grid[c][r] = { char: v2RandomChar() };
+                        }
+                    }
+
+                    // How many rows this stream has traveled on-screen
+                    const maturity = Math.max(0, curHead - s.startRow);
+
+                    // Fill dist/tail maps for rendering (closest head wins)
+                    for (let d = 0; d <= s.tailLen + 2; d++) {
+                        const r = curHead - d;
+                        if (r < 0 || r >= v2Rows) continue;
+                        if (d < distMap[c][r]) {
+                            distMap[c][r] = d;
+                            tailMap[c][r] = s.tailLen;
+                            matMap[c][r] = maturity;
+                        }
+                    }
+
+                    // Clear cells that fell off the tail
+                    for (let r = 0; r < v2Rows; r++) {
+                        const dist = curHead - r;
+                        if (dist > s.tailLen + 3 && v2Grid[c][r] && distMap[c][r] > 9000) {
+                            v2Grid[c][r] = null;
+                        }
+                    }
+
+                    // Stream finished
+                    if (s.headRow > v2Rows + s.tailLen + 4) {
+                        s.dead = true;
+                    }
+                }
+
+                // Remove dead streams, respawn
+                for (let si = streams.length - 1; si >= 0; si--) {
+                    if (streams[si].dead) {
+                        streams[si] = v2MakeStream(false);
+                    }
+                }
+
+                // Occasional extra overlapping stream
+                if (streams.length < V2_MAX_STREAMS_PER_COL && Math.random() < 0.003) {
+                    streams.push(v2MakeStream(false));
+                }
+            }
+
+            // Render grid + slow mutation
+            // Performance optimization: render non-glowing chars to main canvas,
+            // glowing chars to offscreen canvas, then composite
+            ctx.shadowBlur = 0;
+            const mr = settings.mutationRate;
+            const gi = settings.glowIntensity;
+            for (let c = 0; c < v2Cols; c++) {
+                for (let r = 0; r < v2Rows; r++) {
+                    const cell = v2Grid[c][r];
+                    if (!cell) continue;
+
+                    const d = distMap[c][r];
+                    if (d > 9000) continue; // not covered by any active stream
+                    const tl = tailMap[c][r];
+                    const mat = matMap[c][r];
+
+                    // Maturity fade-in: stream must descend 6+ rows before full brightness
+                    // Prevents single-char bright dots from freshly spawned streams
+                    const matFade = Math.min(1, mat / 6);
+                    if (matFade < 0.05) continue; // too young, don't render at all
+
+                    const x = c * fontSize;
+                    const y = (r + 1) * fontSize;
+
+                    // Gentle mutation: head ~1.5/sec, near ~0.6/sec, far ~0.12/sec
+                    if (d <= 1 && Math.random() < 0.025 * mr) cell.char = v2RandomChar();
+                    else if (d < 5 && Math.random() < 0.01 * mr) cell.char = v2RandomChar();
+                    else if (Math.random() < 0.002 * mr) cell.char = v2RandomChar();
+
+                    // Performance optimization: use pre-computed color LUTs
+                    let fillColor;
+                    let isGlowing = false;
+
+                    if (d <= 0) {
+                        // Head character
+                        fillColor = colorLUT.headColor;
+                        isGlowing = true;
+                        // Render to offscreen with glow
+                        offscreenCtx.shadowBlur = 14 * matFade * gi;
+                        offscreenCtx.shadowColor = `hsla(${hue}, 100%, 75%, ${0.9 * matFade})`;
+                        offscreenCtx.fillStyle = fillColor;
+                        offscreenCtx.fillText(cell.char, x, y);
+                        // Also render to main canvas (no glow)
+                        ctx.fillStyle = fillColor;
+                        ctx.fillText(cell.char, x, y);
+                    } else if (d === 1) {
+                        fillColor = colorLUT.near1Color;
+                        isGlowing = true;
+                        // Render to offscreen with glow
+                        offscreenCtx.shadowBlur = 6 * matFade * gi;
+                        offscreenCtx.shadowColor = `hsla(${hue}, 100%, 50%, ${0.5 * matFade})`;
+                        offscreenCtx.fillStyle = fillColor;
+                        offscreenCtx.fillText(cell.char, x, y);
+                        // Also render to main canvas (no glow)
+                        ctx.fillStyle = fillColor;
+                        ctx.fillText(cell.char, x, y);
+                    } else if (d === 2) {
+                        fillColor = colorLUT.near2Color;
+                        isGlowing = true;
+                        // Render to offscreen with glow
+                        offscreenCtx.shadowBlur = 6 * matFade * gi;
+                        offscreenCtx.shadowColor = `hsla(${hue}, 100%, 50%, ${0.5 * matFade})`;
+                        offscreenCtx.fillStyle = fillColor;
+                        offscreenCtx.fillText(cell.char, x, y);
+                        // Also render to main canvas (no glow)
+                        ctx.fillStyle = fillColor;
+                        ctx.fillText(cell.char, x, y);
+                    } else {
+                        // Tail character - use LUT
+                        const t = (d - 2) / Math.max(1, tl - 2);
+                        const lutIndex = Math.min(24, Math.floor(t * 24));
+                        const lutEntry = colorLUT.tailColors[lutIndex];
+                        const finalAlpha = lutEntry.alpha * matFade;
+                        if (finalAlpha < 0.02) continue;
+                        ctx.fillStyle = `hsla(${hue}, 100%, ${lutEntry.lightness}%, ${finalAlpha})`;
+                        ctx.fillText(cell.char, x, y);
+                    }
+                }
+            }
+
+            // Performance optimization: composite offscreen glow layer onto main canvas
+            offscreenCtx.shadowBlur = 0;
+            ctx.globalCompositeOperation = 'lighter';
+            ctx.drawImage(offscreenCanvas, 0, 0);
+            ctx.globalCompositeOperation = 'source-over';
+        }
+
+        // =============================================
+        //  Main loop
+        // =============================================
+        function init() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            v1Init();
+            v2Init();
+        }
+        init();
+
+        let frameCount = 0;
+        let lastFpsTime = performance.now();
+        let currentFps = 60;
+
+        function mainLoop() {
+            // FPS tracking
+            frameCount++;
+            const now = performance.now();
+            if (now - lastFpsTime >= 1000) {
+                currentFps = Math.round(frameCount * 1000 / (now - lastFpsTime));
+                frameCount = 0;
+                lastFpsTime = now;
+                const el = document.getElementById('fps-value');
+                const counter = document.getElementById('fps-counter');
+                if (el) el.textContent = currentFps;
+                if (counter) {
+                    counter.classList.remove('warning', 'critical');
+                    if (currentFps < 40) counter.classList.add('critical');
+                    else if (currentFps < 55) counter.classList.add('warning');
+                }
+            }
+
+            if (currentVersion === 1) {
+                v1Draw();
+            } else {
+                v2Draw();
+            }
+            if (animationRunning) {
+                animationId = requestAnimationFrame(mainLoop);
+            }
+        }
+
+        // Smooth version crossfade
+        function switchVersion(newVersion) {
+            canvas.style.transition = 'opacity 0.3s ease';
+            canvas.style.opacity = '0';
+            setTimeout(() => {
+                currentVersion = newVersion;
+                settings.version = newVersion;
+                ctx.fillStyle = '#000';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                if (newVersion === 2) v2Init();
+                else v1Init();
+                canvas.style.opacity = '1';
+                setTimeout(() => { canvas.style.transition = ''; }, 300);
+            }, 300);
+        }
+
+        // Version toggle
+        versionBtn.addEventListener('click', () => {
+            if (currentVersion === 1) {
+                switchVersion(2);
+                versionBtn.textContent = 'V1';
+                versionBtn.classList.add('active');
+            } else {
+                switchVersion(1);
+                versionBtn.textContent = 'V2';
+                versionBtn.classList.remove('active');
+            }
+        });
+
+        // --- Rotary knob interaction ---
+        const knobs = document.querySelectorAll('.knob-outer');
+        let activeKnob = null;
+        let knobStartY = 0;
+        let knobStartValue = 0;
+
+        function updateKnobVisual(knobEl, value) {
+            const angle = -135 + value * 270;
+            const inner = knobEl.querySelector('.knob-inner');
+            inner.style.transform = `rotate(${angle}deg)`;
+        }
+
+        function updateBtnColors() {
+            const ledColor = `hsl(${hue}, 100%, 45%)`;
+            const glowColor = `hsl(${hue}, 100%, 50%)`;
+            powerLed.style.background = ledColor;
+            powerLed.style.boxShadow = `0 0 6px ${glowColor}`;
+            updateBezelGlow();
+        }
+
+        function updateBezelGlow() {
+            const glow = `hsla(${hue}, 60%, 30%, 0.12)`;
+            document.querySelector('.monitor').style.boxShadow = `
+                0 0 0 2px #1a1a1a,
+                0 0 0 4px #3a3a3a,
+                inset 0 2px 4px rgba(255,255,255,0.05),
+                0 20px 60px rgba(0,0,0,0.7),
+                0 0 80px rgba(0,0,0,0.5),
+                0 0 60px ${glow}
+            `;
+        }
+
+        function applyKnobValue(knobEl, value) {
+            const param = knobEl.dataset.param;
+            if (param === 'hue') {
+                hue = Math.round(value * 360);
+                updateBtnColors();
+                // Performance optimization: rebuild color LUT when hue changes
+                buildColorLUT();
+            } else if (param === 'speed') {
+                // 0..1 maps to 0.1x .. 9.0x (3x wider range)
+                speedMult = 0.1 + value * 8.9;
+            }
+        }
+
+        knobs.forEach(knob => {
+            const val = parseFloat(knob.dataset.value);
+            updateKnobVisual(knob, val);
+            applyKnobValue(knob, val);
+        });
+
+        function onPointerDown(e) {
+            const knob = e.target.closest('.knob-outer');
+            if (!knob) return;
+            activeKnob = knob;
+            knobStartY = e.clientY;
+            knobStartValue = parseFloat(knob.dataset.value);
+            e.preventDefault();
+        }
+
+        function onPointerMove(e) {
+            if (!activeKnob) return;
+            const dy = knobStartY - e.clientY;
+            let newValue = knobStartValue + dy / 150;
+            newValue = Math.max(0, Math.min(1, newValue));
+            activeKnob.dataset.value = newValue;
+            updateKnobVisual(activeKnob, newValue);
+            applyKnobValue(activeKnob, newValue);
+        }
+
+        function onPointerUp() {
+            activeKnob = null;
+        }
+
+        document.addEventListener('pointerdown', onPointerDown);
+        document.addEventListener('pointermove', onPointerMove);
+        document.addEventListener('pointerup', onPointerUp);
+
+        // Toggle animation
+        toggleBtn.addEventListener('click', () => {
+            animationRunning = !animationRunning;
+            if (animationRunning) {
+                toggleBtn.textContent = 'STOP';
+                powerLed.classList.remove('off');
+                mainLoop();
+            } else {
+                toggleBtn.textContent = 'START';
+                powerLed.classList.add('off');
+                cancelAnimationFrame(animationId);
+            }
+        });
+
+        window.addEventListener('resize', () => {
+            resizeCanvas();
+            init();
+        });
+
+        // =============================================
+        //  Settings Engine
+        // =============================================
+
+        const PRESETS = [
+            { name: 'Classic Green',  version:1, hue:120, speed:1.9, density:3, mutationRate:1.0, headBrightness:88, glowIntensity:1.0, scanlineOpacity:0.08, fontSize:26 },
+            { name: 'Film Accurate',  version:2, hue:120, speed:0.8, density:2, mutationRate:0.5, headBrightness:95, glowIntensity:1.5, scanlineOpacity:0.08, fontSize:26 },
+            { name: 'Cyberpunk',      version:2, hue:300, speed:2.5, density:4, mutationRate:1.5, headBrightness:90, glowIntensity:2.0, scanlineOpacity:0.04, fontSize:22 },
+            { name: 'Amber Terminal', version:1, hue:30,  speed:0.6, density:2, mutationRate:0.8, headBrightness:85, glowIntensity:1.0, scanlineOpacity:0.15, fontSize:28 },
+            { name: 'Minimal',        version:2, hue:120, speed:0.5, density:1, mutationRate:0.3, headBrightness:80, glowIntensity:0.5, scanlineOpacity:0.04, fontSize:30 },
+            { name: 'Heavy Rain',     version:2, hue:120, speed:3.0, density:5, mutationRate:2.0, headBrightness:88, glowIntensity:1.0, scanlineOpacity:0.08, fontSize:20 }
+        ];
+
+        // Settings panel DOM refs
+        const settingsPanel = document.getElementById('settings-panel');
+        const settingsBackdrop = document.getElementById('settings-backdrop');
+        const settingsCloseBtn = document.getElementById('settings-close');
+        const presetSelect = document.getElementById('preset-select');
+        const presetLoadBtn = document.getElementById('preset-load');
+        const resetDefaultsBtn = document.getElementById('reset-defaults');
+        const spV1Btn = document.getElementById('sp-v1-btn');
+        const spV2Btn = document.getElementById('sp-v2-btn');
+
+        const sliderSpeed = document.getElementById('slider-speed');
+        const sliderDensity = document.getElementById('slider-density');
+        const sliderMutation = document.getElementById('slider-mutation');
+        const sliderHue = document.getElementById('slider-hue');
+        const sliderHeadBright = document.getElementById('slider-headbright');
+        const sliderGlow = document.getElementById('slider-glow');
+        const sliderScanline = document.getElementById('slider-scanline');
+        const sliderFontSize = document.getElementById('slider-fontsize');
+
+        const valSpeed = document.getElementById('val-speed');
+        const valDensity = document.getElementById('val-density');
+        const valMutation = document.getElementById('val-mutation');
+        const valHue = document.getElementById('val-hue');
+        const valHeadBright = document.getElementById('val-headbright');
+        const valGlow = document.getElementById('val-glow');
+        const valScanline = document.getElementById('val-scanline');
+        const valFontSize = document.getElementById('val-fontsize');
+        const colorPreview = document.getElementById('color-preview');
+
+        function toggleSettingsPanel() {
+            const isOpen = settingsPanel.classList.toggle('open');
+            settingsBackdrop.classList.toggle('open', isOpen);
+        }
+
+        function closeSettingsPanel() {
+            settingsPanel.classList.remove('open');
+            settingsBackdrop.classList.remove('open');
+        }
+
+        // Update panel UI to match current settings
+        function syncUIFromSettings() {
+            sliderSpeed.value = settings.speed;
+            valSpeed.textContent = settings.speed.toFixed(1);
+
+            sliderDensity.value = settings.density;
+            valDensity.textContent = settings.density;
+
+            sliderMutation.value = settings.mutationRate;
+            valMutation.textContent = settings.mutationRate.toFixed(1);
+
+            sliderHue.value = settings.hue;
+            valHue.textContent = settings.hue;
+            colorPreview.style.background = `hsl(${settings.hue},100%,45%)`;
+
+            sliderHeadBright.value = settings.headBrightness;
+            valHeadBright.textContent = settings.headBrightness + '%';
+
+            sliderGlow.value = settings.glowIntensity;
+            valGlow.textContent = settings.glowIntensity.toFixed(1);
+
+            sliderScanline.value = settings.scanlineOpacity;
+            valScanline.textContent = Math.round(settings.scanlineOpacity * 100) + '%';
+
+            sliderFontSize.value = settings.fontSize;
+            valFontSize.textContent = settings.fontSize + 'px';
+
+            // Version buttons
+            if (settings.version === 1) {
+                spV1Btn.classList.add('active');
+                spV2Btn.classList.remove('active');
+            } else {
+                spV1Btn.classList.remove('active');
+                spV2Btn.classList.add('active');
+            }
+
+            // Update panel theming to match hue
+            updatePanelHue();
+
+            // Sync knobs
+            syncKnobsFromSettings();
+        }
+
+        function updatePanelHue() {
+            const h = settings.hue;
+            settingsPanel.style.borderLeftColor = `hsl(${h}, 100%, 40%)`;
+            settingsPanel.style.color = `hsl(${h}, 100%, 45%)`;
+            // Update range accent colors
+            const allRanges = settingsPanel.querySelectorAll('input[type="range"]');
+            allRanges.forEach(r => { r.style.accentColor = `hsl(${h}, 100%, 45%)`; });
+        }
+
+        // Sync knobs to match settings
+        function syncKnobsFromSettings() {
+            // Hue knob: 0..360 maps to 0..1
+            const hueKnob = document.getElementById('knob-hue');
+            const hueVal = settings.hue / 360;
+            hueKnob.dataset.value = hueVal;
+            updateKnobVisual(hueKnob, hueVal);
+
+            // Speed knob: speedMult = 0.1 + value * 8.9, so value = (speedMult - 0.1) / 8.9
+            const speedKnob = document.getElementById('knob-speed');
+            const speedVal = Math.max(0, Math.min(1, (settings.speed - 0.1) / 8.9));
+            speedKnob.dataset.value = speedVal;
+            updateKnobVisual(speedKnob, speedVal);
+        }
+
+        // Apply settings to the live animation engine
+        function applySettings() {
+            hue = settings.hue;
+            speedMult = settings.speed;
+            fontSize = settings.fontSize;
+            V2_MAX_STREAMS_PER_COL = settings.density;
+
+            buildColorLUT();
+            updateBtnColors();
+            updateScanlineCSS();
+
+            // Update chin version button text
+            if (settings.version !== currentVersion) {
+                if (settings.version === 1) {
+                    currentVersion = 1;
+                    versionBtn.textContent = 'V2';
+                    versionBtn.classList.remove('active');
+                } else {
+                    currentVersion = 2;
+                    versionBtn.textContent = 'V1';
+                    versionBtn.classList.add('active');
+                }
+                ctx.fillStyle = '#000';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                if (currentVersion === 1) v1Init(); else v2Init();
+            }
+        }
+
+        function updateScanlineCSS() {
+            const screenEl = document.querySelector('.screen');
+            const op = settings.scanlineOpacity;
+            screenEl.style.setProperty('--scanline-opacity', op);
+            // Override the ::after pseudo-element via a style element
+            let styleTag = document.getElementById('dynamic-scanline-style');
+            if (!styleTag) {
+                styleTag = document.createElement('style');
+                styleTag.id = 'dynamic-scanline-style';
+                document.head.appendChild(styleTag);
+            }
+            styleTag.textContent = `.screen::after {
+                background: repeating-linear-gradient(
+                    0deg,
+                    transparent,
+                    transparent 2px,
+                    rgba(0, 0, 0, ${op}) 2px,
+                    rgba(0, 0, 0, ${op}) 4px
+                ) !important;
+            }`;
+        }
+
+        function saveSettings() {
+            localStorage.setItem('matrixSettings', JSON.stringify(settings));
+        }
+
+        function loadSettings() {
+            try {
+                const raw = localStorage.getItem('matrixSettings');
+                if (!raw) return false;
+                const saved = JSON.parse(raw);
+                // Validate and clamp
+                if (typeof saved.version === 'number') settings.version = (saved.version === 2) ? 2 : 1;
+                if (typeof saved.hue === 'number') settings.hue = Math.max(0, Math.min(360, Math.round(saved.hue)));
+                if (typeof saved.speed === 'number') settings.speed = Math.max(0.1, Math.min(5.0, saved.speed));
+                if (typeof saved.density === 'number') settings.density = Math.max(1, Math.min(5, Math.round(saved.density)));
+                if (typeof saved.mutationRate === 'number') settings.mutationRate = Math.max(0, Math.min(3, saved.mutationRate));
+                if (typeof saved.headBrightness === 'number') settings.headBrightness = Math.max(50, Math.min(100, Math.round(saved.headBrightness)));
+                if (typeof saved.glowIntensity === 'number') settings.glowIntensity = Math.max(0, Math.min(3, saved.glowIntensity));
+                if (typeof saved.scanlineOpacity === 'number') settings.scanlineOpacity = Math.max(0, Math.min(0.20, saved.scanlineOpacity));
+                if (typeof saved.fontSize === 'number') settings.fontSize = Math.max(14, Math.min(40, Math.round(saved.fontSize)));
+                return true;
+            } catch (e) {
+                return false;
+            }
+        }
+
+        function loadPreset(index) {
+            const p = PRESETS[index];
+            if (!p) return;
+            settings.version = p.version;
+            settings.hue = p.hue;
+            settings.speed = p.speed;
+            settings.density = p.density;
+            settings.mutationRate = p.mutationRate;
+            settings.headBrightness = p.headBrightness;
+            settings.glowIntensity = p.glowIntensity;
+            settings.scanlineOpacity = p.scanlineOpacity;
+            settings.fontSize = p.fontSize;
+
+            applySettings();
+            syncUIFromSettings();
+            saveSettings();
+
+            // Font size change requires reinit
+            resizeCanvas();
+            init();
+        }
+
+        function onSettingChange() {
+            applySettings();
+            syncUIFromSettings();
+            saveSettings();
+        }
+
+        // --- Settings panel event wiring ---
+
+        // Open/close
+        document.getElementById('settings-gear').addEventListener('click', toggleSettingsPanel);
+        settingsCloseBtn.addEventListener('click', closeSettingsPanel);
+        settingsBackdrop.addEventListener('click', closeSettingsPanel);
+
+        // Preset load
+        presetLoadBtn.addEventListener('click', () => {
+            loadPreset(parseInt(presetSelect.value));
+        });
+
+        // Reset defaults
+        resetDefaultsBtn.addEventListener('click', () => {
+            localStorage.removeItem('matrixSettings');
+            loadPreset(0); // Classic Green
+        });
+
+        // Version toggle in settings panel
+        spV1Btn.addEventListener('click', () => {
+            settings.version = 1;
+            switchVersion(1);
+            versionBtn.textContent = 'V2';
+            versionBtn.classList.remove('active');
+            syncUIFromSettings();
+            saveSettings();
+        });
+        spV2Btn.addEventListener('click', () => {
+            settings.version = 2;
+            switchVersion(2);
+            versionBtn.textContent = 'V1';
+            versionBtn.classList.add('active');
+            syncUIFromSettings();
+            saveSettings();
+        });
+
+        // Sliders
+        sliderSpeed.addEventListener('input', () => {
+            settings.speed = parseFloat(sliderSpeed.value);
+            onSettingChange();
+        });
+
+        sliderDensity.addEventListener('input', () => {
+            settings.density = parseInt(sliderDensity.value);
+            onSettingChange();
+        });
+
+        sliderMutation.addEventListener('input', () => {
+            settings.mutationRate = parseFloat(sliderMutation.value);
+            onSettingChange();
+        });
+
+        sliderHue.addEventListener('input', () => {
+            settings.hue = parseInt(sliderHue.value);
+            onSettingChange();
+        });
+
+        sliderHeadBright.addEventListener('input', () => {
+            settings.headBrightness = parseInt(sliderHeadBright.value);
+            onSettingChange();
+        });
+
+        sliderGlow.addEventListener('input', () => {
+            settings.glowIntensity = parseFloat(sliderGlow.value);
+            onSettingChange();
+        });
+
+        sliderScanline.addEventListener('input', () => {
+            settings.scanlineOpacity = parseFloat(sliderScanline.value);
+            onSettingChange();
+        });
+
+        sliderFontSize.addEventListener('input', () => {
+            settings.fontSize = parseInt(sliderFontSize.value);
+            onSettingChange();
+            // Font size requires reinit
+            resizeCanvas();
+            init();
+        });
+
+        // --- Knob ↔ Slider bidirectional sync ---
+        // Override applyKnobValue to also update settings + sliders
+        const _origApplyKnobValue = applyKnobValue;
+        // We need to redefine it to sync with settings
+        // The existing knob system calls applyKnobValue on pointer move
+        // We monkey-patch by redefining the onPointerMove behavior
+
+        // Wrap the existing applyKnobValue
+        function applyKnobValueWithSync(knobEl, value) {
+            const param = knobEl.dataset.param;
+            if (param === 'hue') {
+                const newHue = Math.round(value * 360);
+                settings.hue = newHue;
+                hue = newHue;
+                updateBtnColors();
+                buildColorLUT();
+                syncUIFromSettings();
+                saveSettings();
+            } else if (param === 'speed') {
+                const newSpeed = 0.1 + value * 8.9;
+                // Map knob range (0.1-9.0) to settings range (0.1-5.0)
+                settings.speed = Math.min(5.0, Math.round(newSpeed * 10) / 10);
+                speedMult = newSpeed; // actual engine uses full range
+                syncUIFromSettings();
+                saveSettings();
+            }
+        }
+
+        // Replace the pointermove handler to use our synced version
+        document.removeEventListener('pointermove', onPointerMove);
+        document.addEventListener('pointermove', function(e) {
+            if (!activeKnob) return;
+            const dy = knobStartY - e.clientY;
+            let newValue = knobStartValue + dy / 150;
+            newValue = Math.max(0, Math.min(1, newValue));
+            activeKnob.dataset.value = newValue;
+            updateKnobVisual(activeKnob, newValue);
+            applyKnobValueWithSync(activeKnob, newValue);
+        });
+
+        // --- Chin version button sync ---
+        // Override the existing versionBtn click to sync with settings
+        versionBtn.addEventListener('click', function() {
+            settings.version = currentVersion; // currentVersion was already toggled by the earlier listener
+            syncUIFromSettings();
+            saveSettings();
+        });
+
+        // Fullscreen toggle
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(() => {});
+                document.body.classList.add('fullscreen-mode');
+            } else {
+                document.exitFullscreen().catch(() => {});
+                document.body.classList.remove('fullscreen-mode');
+            }
+            setTimeout(() => { resizeCanvas(); init(); }, 100);
+        }
+
+        document.addEventListener('fullscreenchange', () => {
+            if (!document.fullscreenElement) {
+                document.body.classList.remove('fullscreen-mode');
+                setTimeout(() => { resizeCanvas(); init(); }, 100);
+            }
+        });
+
+        // --- Keyboard shortcuts ---
+        document.addEventListener('keydown', (e) => {
+            // Ignore when focused on panel inputs
+            const tag = e.target.tagName.toLowerCase();
+            if (tag === 'input' || tag === 'select' || tag === 'textarea') return;
+
+            const key = e.key.toLowerCase();
+
+            if (key === 's') {
+                e.preventDefault();
+                toggleSettingsPanel();
+            } else if (key === ' ') {
+                e.preventDefault();
+                toggleBtn.click();
+            } else if (key === 'v') {
+                e.preventDefault();
+                versionBtn.click();
+            } else if (key === 'f' && e.shiftKey) {
+                e.preventDefault();
+                const fpsCounter = document.getElementById('fps-counter');
+                if (fpsCounter) {
+                    fpsCounter.style.display = fpsCounter.style.display === 'none' ? 'block' : 'none';
+                }
+            } else if (key === 'f' && !e.shiftKey) {
+                e.preventDefault();
+                toggleFullscreen();
+            } else if (key === 'escape') {
+                closeSettingsPanel();
+            } else if (key >= '1' && key <= '6') {
+                e.preventDefault();
+                loadPreset(parseInt(key) - 1);
+                presetSelect.value = parseInt(key) - 1;
+            }
+        });
+
+        // --- Initialization: load saved settings or defaults ---
+        const didLoad = loadSettings();
+        if (didLoad) {
+            // Apply loaded settings
+            hue = settings.hue;
+            speedMult = settings.speed;
+            fontSize = settings.fontSize;
+            V2_MAX_STREAMS_PER_COL = settings.density;
+
+            if (settings.version !== currentVersion) {
+                if (settings.version === 2) {
+                    currentVersion = 2;
+                    versionBtn.textContent = 'V1';
+                    versionBtn.classList.add('active');
+                } else {
+                    currentVersion = 1;
+                    versionBtn.textContent = 'V2';
+                    versionBtn.classList.remove('active');
+                }
+            }
+
+            buildColorLUT();
+            updateBtnColors();
+            updateScanlineCSS();
+            resizeCanvas();
+            init();
+        } else {
+            updateScanlineCSS();
+        }
+        syncUIFromSettings();
+
+        mainLoop();
+    </script>
+</body>
+</html>

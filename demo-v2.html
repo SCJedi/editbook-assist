@@ -1,0 +1,1440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EDIT BOOK ASSIST v2 - Route R044</title>
+    <style>
+        :root {
+            --bg-black: #0a0a0a;
+            --amber-primary: #F5A623;
+            --amber-bright: #FFD54F;
+            --amber-dark: #D4920B;
+            --amber-glow: rgba(245, 166, 35, 0.5);
+            --text-amber: #FFD54F;
+            --grid-line: rgba(255, 213, 79, 0.1);
+            --reserved-amber: #FF8C42;
+            --form3982-amber: #D4920B;
+            --alert-red: #FF4444;
+            --sticker-blue: #42A5F5;
+            --sticker-orange: #FF9800;
+            --sticker-red: #F44336;
+            --sticker-green: #66BB6A;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: var(--bg-black);
+            color: var(--text-amber);
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* LED Grid Background */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image:
+                linear-gradient(0deg, transparent 24%, var(--grid-line) 25%, var(--grid-line) 26%, transparent 27%, transparent 74%, var(--grid-line) 75%, var(--grid-line) 76%, transparent 77%, transparent),
+                linear-gradient(90deg, transparent 24%, var(--grid-line) 25%, var(--grid-line) 26%, transparent 27%, transparent 74%, var(--grid-line) 75%, var(--grid-line) 76%, transparent 77%, transparent);
+            background-size: 50px 50px;
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.3;
+        }
+
+        /* Scanline effect */
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                to bottom,
+                transparent 50%,
+                rgba(255, 213, 79, 0.02) 50%
+            );
+            background-size: 100% 4px;
+            pointer-events: none;
+            z-index: 1;
+            animation: scanline 8s linear infinite;
+        }
+
+        @keyframes scanline {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(100vh); }
+        }
+
+        .app-container {
+            position: relative;
+            z-index: 2;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        header {
+            background: linear-gradient(180deg, rgba(245, 166, 35, 0.15) 0%, transparent 100%);
+            border-bottom: 2px solid var(--amber-dark);
+            padding: 20px 40px;
+            box-shadow: 0 0 20px var(--amber-glow);
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1800px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-size: 28px;
+            letter-spacing: 3px;
+            text-shadow: 0 0 10px var(--amber-glow);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .alert-badge {
+            background: var(--alert-red);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 14px;
+            animation: pulse-alert 2s infinite;
+        }
+
+        @keyframes pulse-alert {
+            0%, 100% { opacity: 1; box-shadow: 0 0 5px var(--alert-red); }
+            50% { opacity: 0.7; box-shadow: 0 0 15px var(--alert-red); }
+        }
+
+        .mode-indicator {
+            font-size: 14px;
+            padding: 8px 16px;
+            background: rgba(245, 166, 35, 0.2);
+            border: 1px solid var(--amber-primary);
+            border-radius: 4px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        /* Main Content */
+        main {
+            flex: 1;
+            padding: 20px;
+            width: 100%;
+        }
+
+        /* LEVEL 1: Full Case View (DEFAULT) */
+        .case-container-fullview {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            max-width: 100%;
+            margin: 0 auto;
+        }
+
+        .case-container-fullview .row {
+            display: flex;
+            gap: 5px;
+            align-items: stretch;
+        }
+
+        .case-container-fullview .wing-segment {
+            flex: 1;
+            border: 1px solid var(--amber-dark);
+            background: rgba(245, 166, 35, 0.05);
+            border-radius: 4px;
+            position: relative;
+            min-height: 30px;
+            display: flex;
+            align-items: stretch;
+        }
+
+        .case-container-fullview .wing-label {
+            writing-mode: vertical-rl;
+            transform: rotate(180deg);
+            font-size: 9px;
+            padding: 3px;
+            background: var(--amber-dark);
+            color: black;
+            font-weight: bold;
+            min-width: 18px;
+            text-align: center;
+        }
+
+        .case-container-fullview .cells-row {
+            display: flex;
+            flex: 1;
+            align-items: stretch;
+        }
+
+        .case-container-fullview .cell {
+            flex-grow: 1;
+            min-width: 8px;
+            height: 30px;
+            background: rgba(10, 10, 10, 0.7);
+            border-right: 1px solid rgba(0, 0, 0, 0.3);
+            position: relative;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .case-container-fullview .cell:hover {
+            box-shadow: 0 0 10px var(--amber-glow);
+        }
+
+        /* Street color bar - BOTTOM 30% of cell */
+        .case-container-fullview .cell.address::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 30%;
+            background: var(--street-color);
+            pointer-events: none;
+        }
+
+        .case-container-fullview .cell.form3982 {
+            background: linear-gradient(135deg, var(--form3982-amber) 0%, rgba(212, 146, 11, 0.5) 100%);
+        }
+
+        .case-container-fullview .cell.reserved {
+            background: linear-gradient(135deg, var(--reserved-amber) 0%, rgba(255, 140, 66, 0.5) 100%);
+        }
+
+        .case-container-fullview .cell.has-alert {
+            animation: pulse-cell 2s infinite;
+        }
+
+        @keyframes pulse-cell {
+            0%, 100% {
+                box-shadow: 0 0 5px rgba(245, 166, 35, 0.3);
+            }
+            50% {
+                box-shadow: 0 0 15px rgba(255, 68, 68, 0.8), inset 0 0 10px rgba(255, 68, 68, 0.5);
+            }
+        }
+
+        /* Sticker indicators for full view */
+        .case-container-fullview .sticker-dot {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background: var(--sticker-color);
+        }
+
+        /* Street name labels spanning groups */
+        .street-label-span {
+            position: absolute;
+            bottom: -18px;
+            left: 0;
+            font-size: 8px;
+            color: var(--text-amber);
+            opacity: 0.8;
+            white-space: nowrap;
+            pointer-events: none;
+        }
+
+        /* LEVEL 2: Single Wing/Shelf View */
+        .shelf-detail-view {
+            display: none;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .shelf-detail-view.active {
+            display: block;
+        }
+
+        .shelf-detail-header {
+            background: linear-gradient(180deg, var(--amber-dark) 0%, rgba(212, 146, 11, 0.5) 100%);
+            padding: 12px 20px;
+            margin-bottom: 15px;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: bold;
+            letter-spacing: 2px;
+        }
+
+        .shelf-detail-cells {
+            display: flex;
+            gap: 4px;
+            flex-wrap: wrap;
+        }
+
+        .shelf-detail-cells .cell {
+            min-width: 60px;
+            height: 90px;
+            background: linear-gradient(135deg, rgba(245, 166, 35, 0.15) 0%, rgba(212, 146, 11, 0.1) 100%);
+            border: 1px solid var(--amber-dark);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 5px;
+        }
+
+        .shelf-detail-cells .cell.w-2 { min-width: 124px; }
+        .shelf-detail-cells .cell.w-3 { min-width: 188px; }
+        .shelf-detail-cells .cell.w-4 { min-width: 252px; }
+
+        .shelf-detail-cells .cell:hover {
+            box-shadow: 0 0 20px var(--amber-glow);
+            border-color: var(--amber-bright);
+            transform: translateY(-3px);
+        }
+
+        /* Street color bar - BOTTOM 30% */
+        .shelf-detail-cells .cell.address::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 30%;
+            background: var(--street-color);
+            border-radius: 0 0 3px 3px;
+            pointer-events: none;
+        }
+
+        .shelf-detail-cells .cell.form3982 {
+            background: linear-gradient(135deg, var(--form3982-amber) 0%, rgba(212, 146, 11, 0.5) 100%);
+            font-size: 9px;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .shelf-detail-cells .cell.reserved {
+            background: linear-gradient(135deg, var(--reserved-amber) 0%, rgba(255, 140, 66, 0.5) 100%);
+            font-size: 10px;
+            font-weight: bold;
+            text-align: center;
+            color: white;
+        }
+
+        .cell-address-num {
+            font-size: 14px;
+            font-weight: bold;
+            color: var(--amber-bright);
+            z-index: 1;
+        }
+
+        .cell-stickers {
+            position: absolute;
+            top: 3px;
+            right: 3px;
+            display: flex;
+            gap: 3px;
+            z-index: 1;
+        }
+
+        .sticker {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .sticker:hover {
+            transform: scale(1.5);
+            box-shadow: 0 0 10px currentColor;
+        }
+
+        .sticker.FWD { background: var(--sticker-blue); }
+        .sticker.HOLD { background: var(--sticker-orange); }
+        .sticker.VAC { background: var(--sticker-green); }
+        .sticker.DEC { background: var(--sticker-red); }
+        .sticker.ALERT { background: var(--alert-red); }
+
+        .sticker.expired {
+            animation: glow-red 1.5s infinite;
+        }
+
+        @keyframes glow-red {
+            0%, 100% { box-shadow: 0 0 5px var(--alert-red); }
+            50% { box-shadow: 0 0 15px var(--alert-red), 0 0 25px var(--alert-red); }
+        }
+
+        /* LEVEL 3: Edit Panel (Detail View) */
+        .edit-panel {
+            position: fixed;
+            right: -450px;
+            top: 0;
+            width: 450px;
+            height: 100vh;
+            background: linear-gradient(135deg, rgba(10, 10, 10, 0.98) 0%, rgba(30, 30, 30, 0.98) 100%);
+            border-left: 3px solid var(--amber-primary);
+            box-shadow: -5px 0 30px rgba(0, 0, 0, 0.8);
+            transition: right 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            z-index: 1000;
+            overflow-y: auto;
+            padding: 30px;
+        }
+
+        .edit-panel.open {
+            right: 0;
+        }
+
+        .edit-panel h2 {
+            font-size: 20px;
+            margin-bottom: 25px;
+            text-shadow: 0 0 10px var(--amber-glow);
+            letter-spacing: 2px;
+            border-bottom: 2px solid var(--amber-dark);
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            opacity: 0.9;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--amber-dark);
+            border-radius: 4px;
+            color: var(--text-amber);
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: var(--amber-bright);
+            box-shadow: 0 0 10px var(--amber-glow);
+        }
+
+        .color-swatches {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .color-swatch {
+            width: 100%;
+            height: 40px;
+            border-radius: 4px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .color-swatch:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 15px currentColor;
+        }
+
+        .color-swatch.selected {
+            border-color: var(--amber-bright);
+            box-shadow: 0 0 15px var(--amber-bright);
+        }
+
+        .cell-preview {
+            background: rgba(0, 0, 0, 0.5);
+            border: 2px solid var(--amber-dark);
+            border-radius: 4px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .cell-preview-inner {
+            display: inline-block;
+            min-width: 80px;
+            height: 120px;
+            background: linear-gradient(135deg, rgba(245, 166, 35, 0.15) 0%, rgba(212, 146, 11, 0.1) 100%);
+            border: 2px solid var(--amber-dark);
+            border-radius: 4px;
+            padding: 10px;
+            position: relative;
+        }
+
+        .cell-preview-inner::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 30%;
+            background: var(--preview-color);
+            border-radius: 0 0 3px 3px;
+        }
+
+        .stickers-list {
+            margin-top: 15px;
+        }
+
+        .sticker-item {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--amber-dark);
+            border-radius: 4px;
+            padding: 10px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .sticker-info {
+            flex: 1;
+        }
+
+        .sticker-type {
+            font-weight: bold;
+            font-size: 12px;
+            margin-bottom: 4px;
+        }
+
+        .sticker-details {
+            font-size: 10px;
+            opacity: 0.7;
+        }
+
+        .btn {
+            background: var(--amber-dark);
+            color: black;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s;
+            margin-right: 10px;
+        }
+
+        .btn:hover {
+            background: var(--amber-bright);
+            box-shadow: 0 0 15px var(--amber-glow);
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: rgba(245, 166, 35, 0.2);
+            color: var(--text-amber);
+            border: 1px solid var(--amber-dark);
+        }
+
+        .btn-danger {
+            background: var(--alert-red);
+            color: white;
+        }
+
+        .btn-small {
+            padding: 5px 10px;
+            font-size: 10px;
+        }
+
+        .action-buttons {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px solid var(--amber-dark);
+            display: flex;
+            gap: 10px;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: transparent;
+            border: none;
+            color: var(--text-amber);
+            font-size: 24px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .close-btn:hover {
+            color: var(--amber-bright);
+            text-shadow: 0 0 10px var(--amber-glow);
+        }
+
+        .add-sticker-form {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--amber-dark);
+            border-radius: 4px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+
+        /* Breadcrumb */
+        .breadcrumb {
+            padding: 15px 40px;
+            background: rgba(245, 166, 35, 0.1);
+            border-bottom: 1px solid var(--amber-dark);
+            font-size: 12px;
+            display: none;
+        }
+
+        .breadcrumb.show {
+            display: block;
+        }
+
+        .breadcrumb a {
+            color: var(--amber-bright);
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .breadcrumb a:hover {
+            text-shadow: 0 0 10px var(--amber-glow);
+        }
+
+        /* Context Menu */
+        .context-menu {
+            position: absolute;
+            background: rgba(10, 10, 10, 0.98);
+            border: 2px solid var(--amber-primary);
+            border-radius: 6px;
+            box-shadow: 0 5px 25px rgba(0, 0, 0, 0.8), 0 0 20px var(--amber-glow);
+            z-index: 2000;
+            display: none;
+        }
+
+        .context-menu.show {
+            display: block;
+        }
+
+        .context-menu-item {
+            padding: 12px 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 12px;
+            border-bottom: 1px solid rgba(245, 166, 35, 0.2);
+        }
+
+        .context-menu-item:last-child {
+            border-bottom: none;
+        }
+
+        .context-menu-item:hover {
+            background: var(--amber-dark);
+            color: black;
+        }
+
+        /* Footer */
+        footer {
+            background: linear-gradient(0deg, rgba(245, 166, 35, 0.15) 0%, transparent 100%);
+            border-top: 2px solid var(--amber-dark);
+            padding: 20px 40px;
+            font-size: 12px;
+            text-align: center;
+        }
+
+        .footer-stats {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin-bottom: 10px;
+        }
+
+        .stat {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .stat-label {
+            opacity: 0.7;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .stat-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--amber-bright);
+            text-shadow: 0 0 5px var(--amber-glow);
+        }
+
+        /* Row label */
+        .row-label {
+            writing-mode: vertical-rl;
+            transform: rotate(180deg);
+            font-size: 10px;
+            padding: 5px;
+            background: var(--amber-dark);
+            color: black;
+            font-weight: bold;
+            min-width: 22px;
+            text-align: center;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <header>
+            <div class="header-content">
+                <h1>
+                    EDIT BOOK ASSIST v2 — ROUTE R044
+                    <span class="alert-badge" id="alertBadge" style="display: none;">0 ALERTS</span>
+                </h1>
+                <div class="mode-indicator" id="modeIndicator">FULL CASE VIEW</div>
+            </div>
+        </header>
+
+        <div class="breadcrumb" id="breadcrumb">
+            <a onclick="exitZoom()">← Full Case</a>
+        </div>
+
+        <main>
+            <!-- LEVEL 1: Full Case View -->
+            <div class="case-container-fullview" id="fullCaseView">
+                <!-- Rendered by JS -->
+            </div>
+
+            <!-- LEVEL 2: Shelf Detail View -->
+            <div class="shelf-detail-view" id="shelfDetailView">
+                <div class="shelf-detail-header" id="shelfDetailHeader">
+                    LEFT WING — SHELF 1
+                </div>
+                <div class="shelf-detail-cells" id="shelfDetailCells">
+                    <!-- Rendered by JS -->
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <div class="footer-stats">
+                <div class="stat">
+                    <span class="stat-label">Total Wings</span>
+                    <span class="stat-value">3</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">Total Cells</span>
+                    <span class="stat-value" id="totalCells">720</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">Usable Cells</span>
+                    <span class="stat-value" id="usableCells">706</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">Addresses</span>
+                    <span class="stat-value" id="addressCount">0</span>
+                </div>
+            </div>
+            <div style="opacity: 0.6; margin-top: 10px;">
+                TEAM B v2 DEMO — Horizontal Color Bars, Street Spanning, 3 Zoom Levels
+            </div>
+        </footer>
+
+        <!-- LEVEL 3: Edit Panel -->
+        <div class="edit-panel" id="editPanel">
+            <button class="close-btn" onclick="closeEditPanel()">×</button>
+            <h2>EDIT ADDRESS</h2>
+
+            <div class="form-group">
+                <label>Address Number</label>
+                <input type="text" id="editAddressNum" placeholder="e.g. 1001">
+            </div>
+
+            <div class="form-group">
+                <label>Street Name</label>
+                <input type="text" id="editStreetName" placeholder="e.g. Maple Dr">
+            </div>
+
+            <div class="form-group">
+                <label>Street Color</label>
+                <div class="color-swatches" id="colorSwatches">
+                    <!-- Colors will be added by JS -->
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Cell Width</label>
+                <select id="editCellWidth">
+                    <option value="1">1 inch</option>
+                    <option value="2">2 inches</option>
+                    <option value="3">3 inches</option>
+                    <option value="4">4 inches</option>
+                </select>
+            </div>
+
+            <div class="cell-preview">
+                <div class="cell-preview-inner" id="cellPreview">
+                    <div class="cell-address-num" id="previewNum">1001</div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Stickers</label>
+                <div class="stickers-list" id="stickersList">
+                    <!-- Stickers will be added by JS -->
+                </div>
+                <button class="btn btn-secondary btn-small" onclick="showAddStickerForm()">+ Add Sticker</button>
+
+                <div class="add-sticker-form" id="addStickerForm" style="display: none;">
+                    <select id="stickerType">
+                        <option value="">Select Type</option>
+                        <option value="FWD">Forward</option>
+                        <option value="HOLD">Hold</option>
+                        <option value="VAC">Vacant</option>
+                        <option value="DEC">Deceased</option>
+                        <option value="ALERT">Other</option>
+                    </select>
+                    <input type="date" id="stickerExpires" placeholder="Expiration Date">
+                    <input type="text" id="stickerNote" placeholder="Note">
+                    <div style="margin-top: 10px;">
+                        <button class="btn btn-small" onclick="addSticker()">Add</button>
+                        <button class="btn btn-secondary btn-small" onclick="cancelAddSticker()">Cancel</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="action-buttons">
+                <button class="btn" onclick="saveAddress()">SAVE</button>
+                <button class="btn btn-secondary" onclick="closeEditPanel()">CANCEL</button>
+                <button class="btn btn-danger" onclick="deleteAddress()">DELETE</button>
+            </div>
+        </div>
+
+        <!-- Context Menu -->
+        <div class="context-menu" id="contextMenu">
+            <div class="context-menu-item" onclick="changeEquipment()">Change Equipment Type</div>
+            <div class="context-menu-item" onclick="removeEquipment()">Remove Wing</div>
+            <div class="context-menu-item" onclick="addWing()">Add Wing</div>
+        </div>
+    </div>
+
+    <script>
+        // Sample route data - consecutive same-street addresses grouped together
+        const sampleRoute = {
+            routeId: "R044",
+            carrier: "Demo Carrier",
+            office: "Sample Post Office",
+            addresses: [
+                { seq: 1, number: "1001", street: "Maple Dr", color: "#66BB6A", width: 1, stickers: [] },
+                { seq: 2, number: "1005", street: "Maple Dr", color: "#66BB6A", width: 1, stickers: [{ type: "HOLD", expires: "2026-02-15", note: "Vacation — resume 2/16" }] },
+                { seq: 3, number: "1009", street: "Maple Dr", color: "#66BB6A", width: 2, stickers: [] },
+                { seq: 4, number: "1013", street: "Maple Dr", color: "#66BB6A", width: 1, stickers: [] },
+                { seq: 5, number: "1017", street: "Maple Dr", color: "#66BB6A", width: 1, stickers: [] },
+                { seq: 6, number: "1021", street: "Maple Dr", color: "#66BB6A", width: 1, stickers: [] },
+                { seq: 7, number: "1025", street: "Maple Dr", color: "#66BB6A", width: 1, stickers: [] },
+                { seq: 8, number: "220", street: "Cedar Ln", color: "#42A5F5", width: 1, stickers: [{ type: "FWD", expires: "2026-06-01", note: "→ 555 Pine St, Anytown 12345" }] },
+                { seq: 9, number: "222", street: "Cedar Ln", color: "#42A5F5", width: 1, stickers: [{ type: "FWD", expires: "2026-02-01", note: "EXPIRED — forward ended" }] },
+                { seq: 10, number: "224", street: "Cedar Ln", color: "#42A5F5", width: 1, stickers: [] },
+                { seq: 11, number: "226", street: "Cedar Ln", color: "#42A5F5", width: 2, stickers: [] },
+                { seq: 12, number: "228", street: "Cedar Ln", color: "#42A5F5", width: 1, stickers: [] },
+                { seq: 13, number: "230", street: "Cedar Ln", color: "#42A5F5", width: 1, stickers: [] },
+                { seq: 14, number: "400", street: "Oak Ave", color: "#FFA726", width: 1, stickers: [] },
+                { seq: 15, number: "402", street: "Oak Ave", color: "#FFA726", width: 1, stickers: [] },
+                { seq: 16, number: "404", street: "Oak Ave", color: "#FFA726", width: 1, stickers: [] },
+                { seq: 17, number: "406", street: "Oak Ave", color: "#FFA726", width: 1, stickers: [] },
+                { seq: 18, number: "408", street: "Oak Ave", color: "#FFA726", width: 1, stickers: [] },
+                { seq: 19, number: "101", street: "Pine Rd", color: "#AB47BC", width: 1, stickers: [] },
+                { seq: 20, number: "103", street: "Pine Rd", color: "#AB47BC", width: 1, stickers: [] },
+                { seq: 21, number: "105", street: "Pine Rd", color: "#AB47BC", width: 3, stickers: [] },
+                { seq: 22, number: "107", street: "Pine Rd", color: "#AB47BC", width: 1, stickers: [] },
+                { seq: 23, number: "109", street: "Pine Rd", color: "#AB47BC", width: 1, stickers: [] },
+                { seq: 24, number: "555", street: "Birch St", color: "#EF5350", width: 1, stickers: [] },
+                { seq: 25, number: "557", street: "Birch St", color: "#EF5350", width: 1, stickers: [{ type: "VAC", expires: "2026-03-01", note: "Vacant property" }] },
+                { seq: 26, number: "559", street: "Birch St", color: "#EF5350", width: 2, stickers: [] },
+                { seq: 27, number: "561", street: "Birch St", color: "#EF5350", width: 1, stickers: [] },
+                { seq: 28, number: "800", street: "Elm Way", color: "#26C6DA", width: 1, stickers: [] },
+                { seq: 29, number: "802", street: "Elm Way", color: "#26C6DA", width: 1, stickers: [] },
+                { seq: 30, number: "804", street: "Elm Way", color: "#26C6DA", width: 2, stickers: [] },
+                { seq: 31, number: "806", street: "Elm Way", color: "#26C6DA", width: 1, stickers: [] },
+                { seq: 32, number: "808", street: "Elm Way", color: "#26C6DA", width: 1, stickers: [] },
+                { seq: 33, number: "810", street: "Elm Way", color: "#26C6DA", width: 1, stickers: [] },
+                { seq: 34, number: "900", street: "Ash Ct", color: "#7E57C2", width: 1, stickers: [{ type: "DEC", expires: "", note: "Deceased — return all" }] },
+                { seq: 35, number: "902", street: "Ash Ct", color: "#7E57C2", width: 1, stickers: [] },
+                { seq: 36, number: "904", street: "Ash Ct", color: "#7E57C2", width: 1, stickers: [] },
+            ]
+        };
+
+        // State
+        let currentEditCell = null;
+        let currentZoomLevel = 1; // 1 = full case, 2 = shelf detail, 3 = edit panel
+        let currentWingId = null;
+        let currentShelfNum = null;
+
+        const wings = [
+            { id: 'left', type: '124-D', cells: 240, position: 'Left Wing' },
+            { id: 'middle', type: '144-D', cells: 240, position: 'Middle Wing' },
+            { id: 'right', type: '124-D', cells: 240, position: 'Right Wing' }
+        ];
+
+        const streetColors = [
+            '#66BB6A', '#42A5F5', '#FFA726', '#AB47BC', '#EF5350', '#26C6DA',
+            '#7E57C2', '#8D6E63', '#78909C', '#FFD54F', '#FF7043', '#9CCC65'
+        ];
+
+        const reservedCells = [
+            { label: 'MACH', width: 1 },
+            { label: 'NON-MACH', width: 2 },
+            { label: 'UTF', width: 1 },
+            { label: 'IA', width: 1 },
+            { label: 'NSN', width: 1 },
+            { label: 'ANK', width: 1 },
+            { label: 'OTHER', width: 1 }
+        ];
+
+        // Initialize
+        function init() {
+            renderFullCaseView();
+            updateStats();
+            setupColorSwatches();
+
+            // Close context menu on click outside
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('.context-menu')) {
+                    hideContextMenu();
+                }
+            });
+        }
+
+        // LEVEL 1: Full Case View Rendering
+        function renderFullCaseView() {
+            const container = document.getElementById('fullCaseView');
+            container.innerHTML = '';
+
+            // Create 6 rows (shelves 1-6, bottom to top)
+            for (let shelf = 1; shelf <= 6; shelf++) {
+                const rowDiv = document.createElement('div');
+                rowDiv.className = 'row';
+
+                // Row label
+                const rowLabel = document.createElement('div');
+                rowLabel.className = 'row-label';
+                rowLabel.textContent = `S${shelf}`;
+                rowDiv.appendChild(rowLabel);
+
+                // Create wing segments for this row
+                wings.forEach((wing, wingIdx) => {
+                    const wingSegment = document.createElement('div');
+                    wingSegment.className = 'wing-segment';
+
+                    // Wing label
+                    const wingLabel = document.createElement('div');
+                    wingLabel.className = 'wing-label';
+                    wingLabel.textContent = wing.position.substring(0, 1);
+                    wingSegment.appendChild(wingLabel);
+
+                    // Cells container
+                    const cellsRow = document.createElement('div');
+                    cellsRow.className = 'cells-row';
+
+                    // Render cells for this wing-shelf combination
+                    const cells = getCellsForWingShelf(wing.id, shelf);
+                    cells.forEach(cellData => {
+                        const cell = createFullViewCell(cellData, wing.id, shelf);
+                        cellsRow.appendChild(cell);
+                    });
+
+                    wingSegment.appendChild(cellsRow);
+                    wingSegment.onclick = () => zoomToShelf(wing.id, shelf);
+                    rowDiv.appendChild(wingSegment);
+                });
+
+                container.appendChild(rowDiv);
+            }
+        }
+
+        function getCellsForWingShelf(wingId, shelfNum) {
+            const wing = wings.find(w => w.id === wingId);
+            const cellsPerShelf = wing.cells / 6;
+            const cells = [];
+
+            // Form 3982 at start of row
+            cells.push({ type: 'form3982', width: 1 });
+
+            // Get addresses for this wing-shelf
+            const addresses = getAddressesForWingShelf(wingId, shelfNum);
+            let usedCells = 1; // form3982
+
+            addresses.forEach(addr => {
+                cells.push({
+                    type: 'address',
+                    width: addr.width,
+                    address: addr
+                });
+                usedCells += addr.width;
+            });
+
+            // Reserved cells at end of shelf 1, right wing
+            if (shelfNum === 1 && wingId === 'right') {
+                const remaining = cellsPerShelf - usedCells - 8;
+                for (let i = 0; i < remaining; i++) {
+                    cells.push({ type: 'empty', width: 1 });
+                }
+                reservedCells.forEach(rc => {
+                    cells.push({ type: 'reserved', width: rc.width, label: rc.label });
+                });
+            } else {
+                // Fill remaining with empty cells
+                const remaining = cellsPerShelf - usedCells;
+                for (let i = 0; i < remaining; i++) {
+                    cells.push({ type: 'empty', width: 1 });
+                }
+            }
+
+            return cells;
+        }
+
+        function getAddressesForWingShelf(wingId, shelfNum) {
+            // Distribute addresses sequentially across Row 1 (left→middle→right), then Row 2, etc.
+            const wingOrder = ['left', 'middle', 'right'];
+            const wingIndex = wingOrder.indexOf(wingId);
+            const cellsPerWing = wings.find(w => w.id === wingId).cells / 6;
+
+            const totalCellsPerRow = wings.reduce((sum, w) => sum + w.cells / 6, 0);
+            const rowStartCellIndex = (shelfNum - 1) * totalCellsPerRow;
+
+            // Calculate where this wing's cells start in the row
+            let wingStartInRow = 0;
+            for (let i = 0; i < wingIndex; i++) {
+                wingStartInRow += wings[i].cells / 6;
+            }
+
+            const wingStartCellIndex = rowStartCellIndex + wingStartInRow;
+            const wingEndCellIndex = wingStartCellIndex + cellsPerWing;
+
+            // Place addresses sequentially
+            const addresses = [];
+            let currentCellIndex = 0;
+            let reservedAtStart = 1; // Form 3982
+            let reservedAtEnd = (shelfNum === 1 && wingId === 'right') ? 8 : 0;
+
+            for (const addr of sampleRoute.addresses) {
+                const addrStart = currentCellIndex;
+                const addrEnd = currentCellIndex + addr.width;
+
+                // Check if this address falls within this wing-shelf segment
+                const effectiveWingStart = wingStartCellIndex + reservedAtStart;
+                const effectiveWingEnd = wingEndCellIndex - reservedAtEnd;
+
+                if (addrStart >= effectiveWingStart - wingStartCellIndex && addrStart < effectiveWingEnd - wingStartCellIndex) {
+                    addresses.push(addr);
+                }
+
+                currentCellIndex += addr.width;
+            }
+
+            return addresses;
+        }
+
+        function createFullViewCell(cellData, wingId, shelfNum) {
+            const cell = document.createElement('div');
+            cell.className = 'cell';
+
+            if (cellData.type === 'address') {
+                cell.classList.add('address');
+                cell.style.setProperty('--street-color', cellData.address.color);
+                cell.style.flexGrow = cellData.width;
+
+                // Alert check
+                if (cellData.address.stickers.some(s => isExpired(s.expires))) {
+                    cell.classList.add('has-alert');
+                }
+
+                // Sticker indicator
+                if (cellData.address.stickers.length > 0) {
+                    const dot = document.createElement('div');
+                    dot.className = 'sticker-dot';
+                    const firstSticker = cellData.address.stickers[0];
+                    const stickerColorMap = {
+                        FWD: '#42A5F5',
+                        HOLD: '#FF9800',
+                        VAC: '#66BB6A',
+                        DEC: '#F44336',
+                        ALERT: '#FF4444'
+                    };
+                    dot.style.setProperty('--sticker-color', stickerColorMap[firstSticker.type] || '#FFD54F');
+                    cell.appendChild(dot);
+                }
+
+                cell.onclick = (e) => {
+                    e.stopPropagation();
+                    zoomToShelf(wingId, shelfNum);
+                };
+            } else if (cellData.type === 'form3982') {
+                cell.classList.add('form3982');
+                cell.style.flexGrow = 1;
+            } else if (cellData.type === 'reserved') {
+                cell.classList.add('reserved');
+                cell.style.flexGrow = cellData.width;
+            } else {
+                // empty
+                cell.style.flexGrow = 1;
+            }
+
+            return cell;
+        }
+
+        // LEVEL 2: Shelf Detail View
+        function zoomToShelf(wingId, shelfNum) {
+            currentZoomLevel = 2;
+            currentWingId = wingId;
+            currentShelfNum = shelfNum;
+
+            document.getElementById('fullCaseView').style.display = 'none';
+            document.getElementById('shelfDetailView').classList.add('active');
+            document.getElementById('breadcrumb').classList.add('show');
+            document.getElementById('modeIndicator').textContent = 'SHELF VIEW';
+
+            const wing = wings.find(w => w.id === wingId);
+            document.getElementById('shelfDetailHeader').textContent =
+                `${wing.position.toUpperCase()} — SHELF ${shelfNum}`;
+
+            renderShelfDetail(wingId, shelfNum);
+        }
+
+        function renderShelfDetail(wingId, shelfNum) {
+            const container = document.getElementById('shelfDetailCells');
+            container.innerHTML = '';
+
+            const cells = getCellsForWingShelf(wingId, shelfNum);
+
+            cells.forEach(cellData => {
+                const cell = createShelfDetailCell(cellData);
+                container.appendChild(cell);
+            });
+        }
+
+        function createShelfDetailCell(cellData) {
+            const cell = document.createElement('div');
+            cell.className = 'cell';
+
+            if (cellData.type === 'address') {
+                const addr = cellData.address;
+                cell.classList.add('address');
+                if (addr.width > 1) {
+                    cell.classList.add(`w-${addr.width}`);
+                }
+                cell.style.setProperty('--street-color', addr.color);
+
+                const numDiv = document.createElement('div');
+                numDiv.className = 'cell-address-num';
+                numDiv.textContent = addr.number;
+                cell.appendChild(numDiv);
+
+                // Stickers
+                if (addr.stickers && addr.stickers.length > 0) {
+                    const stickersDiv = document.createElement('div');
+                    stickersDiv.className = 'cell-stickers';
+                    addr.stickers.forEach(sticker => {
+                        const stickerEl = document.createElement('div');
+                        stickerEl.className = `sticker ${sticker.type}`;
+                        if (isExpired(sticker.expires)) {
+                            stickerEl.classList.add('expired');
+                        }
+                        stickersDiv.appendChild(stickerEl);
+                    });
+                    cell.appendChild(stickersDiv);
+                }
+
+                cell.onclick = () => openEditPanel(addr);
+            } else if (cellData.type === 'form3982') {
+                cell.classList.add('form3982');
+                cell.textContent = 'FORM 3982';
+            } else if (cellData.type === 'reserved') {
+                cell.classList.add('reserved');
+                if (cellData.width > 1) {
+                    cell.classList.add(`w-${cellData.width}`);
+                }
+                cell.textContent = cellData.label;
+            }
+
+            return cell;
+        }
+
+        function exitZoom() {
+            currentZoomLevel = 1;
+            currentWingId = null;
+            currentShelfNum = null;
+
+            document.getElementById('fullCaseView').style.display = 'flex';
+            document.getElementById('shelfDetailView').classList.remove('active');
+            document.getElementById('breadcrumb').classList.remove('show');
+            document.getElementById('modeIndicator').textContent = 'FULL CASE VIEW';
+        }
+
+        // LEVEL 3: Edit Panel
+        function openEditPanel(address) {
+            currentZoomLevel = 3;
+            currentEditCell = address ? { ...address } : {
+                seq: Date.now(),
+                number: '',
+                street: '',
+                color: streetColors[0],
+                width: 1,
+                stickers: []
+            };
+
+            document.getElementById('editAddressNum').value = currentEditCell.number || '';
+            document.getElementById('editStreetName').value = currentEditCell.street || '';
+            document.getElementById('editCellWidth').value = currentEditCell.width || 1;
+
+            updateColorSelection(currentEditCell.color);
+            updatePreview();
+            renderStickersList();
+
+            document.getElementById('editPanel').classList.add('open');
+            document.getElementById('modeIndicator').textContent = 'EDIT MODE';
+        }
+
+        function closeEditPanel() {
+            document.getElementById('editPanel').classList.remove('open');
+            if (currentWingId && currentShelfNum) {
+                document.getElementById('modeIndicator').textContent = 'SHELF VIEW';
+                currentZoomLevel = 2;
+            } else {
+                document.getElementById('modeIndicator').textContent = 'FULL CASE VIEW';
+                currentZoomLevel = 1;
+            }
+            currentEditCell = null;
+        }
+
+        function setupColorSwatches() {
+            const container = document.getElementById('colorSwatches');
+            streetColors.forEach(color => {
+                const swatch = document.createElement('div');
+                swatch.className = 'color-swatch';
+                swatch.style.backgroundColor = color;
+                swatch.dataset.color = color;
+                swatch.onclick = () => selectColor(color);
+                container.appendChild(swatch);
+            });
+        }
+
+        function selectColor(color) {
+            if (currentEditCell) {
+                currentEditCell.color = color;
+                updateColorSelection(color);
+                updatePreview();
+            }
+        }
+
+        function updateColorSelection(color) {
+            document.querySelectorAll('.color-swatch').forEach(swatch => {
+                if (swatch.dataset.color === color) {
+                    swatch.classList.add('selected');
+                } else {
+                    swatch.classList.remove('selected');
+                }
+            });
+        }
+
+        function updatePreview() {
+            const num = document.getElementById('editAddressNum').value || '---';
+            const color = currentEditCell?.color || streetColors[0];
+
+            document.getElementById('previewNum').textContent = num;
+            document.getElementById('cellPreview').style.setProperty('--preview-color', color);
+        }
+
+        document.getElementById('editAddressNum').addEventListener('input', updatePreview);
+        document.getElementById('editStreetName').addEventListener('input', updatePreview);
+
+        function renderStickersList() {
+            const container = document.getElementById('stickersList');
+            container.innerHTML = '';
+
+            if (!currentEditCell?.stickers || currentEditCell.stickers.length === 0) {
+                container.innerHTML = '<div style="opacity: 0.5; font-size: 11px;">No stickers</div>';
+                return;
+            }
+
+            currentEditCell.stickers.forEach((sticker, idx) => {
+                const item = document.createElement('div');
+                item.className = 'sticker-item';
+
+                const expired = isExpired(sticker.expires);
+                const expiresText = expired ?
+                    `<span style="color: var(--alert-red)">EXPIRED ${sticker.expires}</span>` :
+                    sticker.expires || 'No expiration';
+
+                item.innerHTML = `
+                    <div class="sticker-info">
+                        <div class="sticker-type">${sticker.type}</div>
+                        <div class="sticker-details">Expires: ${expiresText}</div>
+                        <div class="sticker-details">${sticker.note || 'No note'}</div>
+                    </div>
+                    <button class="btn btn-danger btn-small" onclick="removeSticker(${idx})">×</button>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        function showAddStickerForm() {
+            document.getElementById('addStickerForm').style.display = 'block';
+        }
+
+        function cancelAddSticker() {
+            document.getElementById('addStickerForm').style.display = 'none';
+            document.getElementById('stickerType').value = '';
+            document.getElementById('stickerExpires').value = '';
+            document.getElementById('stickerNote').value = '';
+        }
+
+        function addSticker() {
+            const type = document.getElementById('stickerType').value;
+            const expires = document.getElementById('stickerExpires').value;
+            const note = document.getElementById('stickerNote').value;
+
+            if (!type) {
+                alert('Please select a sticker type');
+                return;
+            }
+
+            if (!currentEditCell.stickers) {
+                currentEditCell.stickers = [];
+            }
+
+            currentEditCell.stickers.push({ type, expires, note });
+            renderStickersList();
+            cancelAddSticker();
+        }
+
+        function removeSticker(idx) {
+            currentEditCell.stickers.splice(idx, 1);
+            renderStickersList();
+        }
+
+        function saveAddress() {
+            const number = document.getElementById('editAddressNum').value;
+            const street = document.getElementById('editStreetName').value;
+            const width = parseInt(document.getElementById('editCellWidth').value);
+
+            if (!number || !street) {
+                alert('Please enter address number and street name');
+                return;
+            }
+
+            currentEditCell.number = number;
+            currentEditCell.street = street;
+            currentEditCell.width = width;
+
+            // Find and update in sampleRoute
+            const existing = sampleRoute.addresses.find(a => a.seq === currentEditCell.seq);
+            if (existing) {
+                Object.assign(existing, currentEditCell);
+            } else {
+                sampleRoute.addresses.push(currentEditCell);
+            }
+
+            // Re-render
+            if (currentWingId && currentShelfNum) {
+                renderShelfDetail(currentWingId, currentShelfNum);
+            }
+            renderFullCaseView();
+            updateStats();
+            closeEditPanel();
+        }
+
+        function deleteAddress() {
+            if (!confirm('Delete this address?')) return;
+
+            const idx = sampleRoute.addresses.findIndex(a => a.seq === currentEditCell.seq);
+            if (idx !== -1) {
+                sampleRoute.addresses.splice(idx, 1);
+            }
+
+            if (currentWingId && currentShelfNum) {
+                renderShelfDetail(currentWingId, currentShelfNum);
+            }
+            renderFullCaseView();
+            updateStats();
+            closeEditPanel();
+        }
+
+        function updateStats() {
+            const totalCells = wings.reduce((sum, w) => sum + w.cells, 0);
+            const reserved = 6 + 8; // 6 Form 3982 + 8 status codes
+            const usable = totalCells - reserved;
+            const addressCount = sampleRoute.addresses.length;
+
+            document.getElementById('totalCells').textContent = totalCells;
+            document.getElementById('usableCells').textContent = usable;
+            document.getElementById('addressCount').textContent = addressCount;
+
+            // Count alerts
+            const alerts = sampleRoute.addresses.reduce((count, addr) => {
+                return count + addr.stickers.filter(s => isExpired(s.expires)).length;
+            }, 0);
+
+            const badge = document.getElementById('alertBadge');
+            if (alerts > 0) {
+                badge.textContent = `${alerts} ALERT${alerts > 1 ? 'S' : ''}`;
+                badge.style.display = 'inline-block';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+
+        function isExpired(dateStr) {
+            if (!dateStr) return false;
+            const expDate = new Date(dateStr);
+            const today = new Date();
+            return expDate < today;
+        }
+
+        function hideContextMenu() {
+            document.getElementById('contextMenu').classList.remove('show');
+        }
+
+        function changeEquipment() {
+            // Placeholder
+            hideContextMenu();
+        }
+
+        function removeEquipment() {
+            // Placeholder
+            hideContextMenu();
+        }
+
+        function addWing() {
+            // Placeholder
+            hideContextMenu();
+        }
+
+        // Initialize on load
+        init();
+    </script>
+</body>
+</html>

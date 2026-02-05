@@ -1,0 +1,1034 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>USPS Case Simulator — Edit Book Assist</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: #000;
+            color: #FFB800;
+            overflow: hidden;
+        }
+
+        #header {
+            background: linear-gradient(180deg, #1a1a1a 0%, #000 100%);
+            border-bottom: 2px solid #FFB800;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 20px rgba(255, 184, 0, 0.3);
+        }
+
+        #header h1 {
+            font-size: 24px;
+            letter-spacing: 2px;
+            text-shadow: 0 0 10px #FFB800;
+        }
+
+        #controls {
+            display: flex;
+            gap: 15px;
+        }
+
+        .btn {
+            background: #1a1a1a;
+            border: 1px solid #FFB800;
+            color: #FFB800;
+            padding: 8px 16px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 12px;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn:hover {
+            background: #FFB800;
+            color: #000;
+            box-shadow: 0 0 15px #FFB800;
+        }
+
+        .btn.active {
+            background: #CC9900;
+            color: #000;
+            box-shadow: 0 0 20px #FFB800;
+        }
+
+        #main {
+            display: flex;
+            height: calc(100vh - 70px);
+        }
+
+        #canvas-container {
+            flex: 1;
+            position: relative;
+            overflow: auto;
+        }
+
+        #case-canvas {
+            display: block;
+            cursor: crosshair;
+        }
+
+        #sidebar {
+            width: 0;
+            background: #0a0a0a;
+            border-left: 2px solid #FFB800;
+            overflow-y: auto;
+            transition: width 0.3s;
+            box-shadow: -5px 0 20px rgba(255, 184, 0, 0.2);
+        }
+
+        #sidebar.open {
+            width: 350px;
+        }
+
+        .sidebar-content {
+            padding: 20px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        #sidebar.open .sidebar-content {
+            opacity: 1;
+        }
+
+        .sidebar-header {
+            font-size: 18px;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #FFB800;
+            text-shadow: 0 0 8px #FFB800;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 12px;
+            color: #CC9900;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            background: #1a1a1a;
+            border: 1px solid #666;
+            color: #FFB800;
+            padding: 8px;
+            font-family: inherit;
+            font-size: 14px;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #FFB800;
+            box-shadow: 0 0 10px rgba(255, 184, 0, 0.3);
+        }
+
+        .sticker-list {
+            margin-top: 10px;
+        }
+
+        .sticker-item {
+            background: #1a1a1a;
+            border: 1px solid #666;
+            padding: 10px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .sticker-item:hover {
+            border-color: #FFB800;
+            box-shadow: 0 0 8px rgba(255, 184, 0, 0.2);
+        }
+
+        .sticker-item.expanded {
+            border-color: #FFB800;
+        }
+
+        .sticker-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .sticker-type {
+            font-weight: bold;
+            color: #FFB800;
+        }
+
+        .sticker-details {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #444;
+            display: none;
+        }
+
+        .sticker-item.expanded .sticker-details {
+            display: block;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn-small {
+            background: #1a1a1a;
+            border: 1px solid #FFB800;
+            color: #FFB800;
+            padding: 6px 12px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 11px;
+            transition: all 0.2s;
+            flex: 1;
+        }
+
+        .btn-small:hover {
+            background: #FFB800;
+            color: #000;
+        }
+
+        .context-menu {
+            position: absolute;
+            background: #1a1a1a;
+            border: 2px solid #FFB800;
+            box-shadow: 0 0 30px rgba(255, 184, 0, 0.5);
+            z-index: 1000;
+            display: none;
+        }
+
+        .context-menu-item {
+            padding: 12px 20px;
+            cursor: pointer;
+            border-bottom: 1px solid #333;
+            transition: all 0.2s;
+        }
+
+        .context-menu-item:last-child {
+            border-bottom: none;
+        }
+
+        .context-menu-item:hover {
+            background: #FFB800;
+            color: #000;
+        }
+
+        .tooltip {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.9);
+            border: 1px solid #FFB800;
+            padding: 8px 12px;
+            pointer-events: none;
+            z-index: 999;
+            font-size: 11px;
+            box-shadow: 0 0 15px rgba(255, 184, 0, 0.4);
+            display: none;
+        }
+
+        .color-picker {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 5px;
+        }
+
+        .color-option {
+            width: 30px;
+            height: 30px;
+            border: 2px solid #666;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .color-option:hover,
+        .color-option.selected {
+            border-color: #FFB800;
+            box-shadow: 0 0 10px rgba(255, 184, 0, 0.4);
+        }
+
+        .add-sticker-btn {
+            width: 100%;
+            background: #1a1a1a;
+            border: 1px dashed #FFB800;
+            color: #FFB800;
+            padding: 10px;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: all 0.2s;
+        }
+
+        .add-sticker-btn:hover {
+            background: #FFB800;
+            color: #000;
+            border-style: solid;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+    </style>
+</head>
+<body>
+    <div id="header">
+        <h1>USPS CASE SIMULATOR — EDIT BOOK ASSIST</h1>
+        <div id="controls">
+            <button class="btn" id="zoom-btn">ZOOM MODE</button>
+            <button class="btn" id="reset-btn">RESET VIEW</button>
+        </div>
+    </div>
+
+    <div id="main">
+        <div id="canvas-container">
+            <canvas id="case-canvas"></canvas>
+            <div class="tooltip" id="tooltip"></div>
+        </div>
+        <div id="sidebar">
+            <div class="sidebar-content">
+                <div class="sidebar-header">EDIT CELL</div>
+                <div class="form-group">
+                    <label>ADDRESS NUMBER</label>
+                    <input type="text" id="edit-address-num" placeholder="e.g., 1205">
+                </div>
+                <div class="form-group">
+                    <label>STREET NAME</label>
+                    <input type="text" id="edit-street" placeholder="e.g., Oak Street">
+                </div>
+                <div class="form-group">
+                    <label>STREET COLOR</label>
+                    <div class="color-picker" id="color-picker"></div>
+                </div>
+                <div class="form-group">
+                    <label>CELL WIDTH (INCHES)</label>
+                    <input type="number" id="edit-width" min="1" max="10" value="1">
+                </div>
+                <div class="form-group">
+                    <label>STICKERS</label>
+                    <div class="sticker-list" id="sticker-list"></div>
+                    <button class="add-sticker-btn" id="add-sticker-btn">+ ADD STICKER</button>
+                </div>
+                <div class="btn-group">
+                    <button class="btn-small" id="save-btn">SAVE</button>
+                    <button class="btn-small" id="cancel-btn">CANCEL</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="context-menu" id="context-menu">
+        <div class="context-menu-item" data-action="remove">Remove Equipment</div>
+        <div class="context-menu-item" data-action="change">Change Equipment Type</div>
+    </div>
+
+    <script>
+        // ===== STATE =====
+        const state = {
+            canvas: null,
+            ctx: null,
+            zoom: false,
+            zoomedShelf: null,
+            hoveredWing: null,
+            hoveredCell: null,
+            selectedCell: null,
+            draggedCell: null,
+            dragStartX: 0,
+            glowIntensity: 0,
+            addresses: [],
+            wings: [],
+            mouseX: 0,
+            mouseY: 0,
+            scrollX: 0,
+            scrollY: 0
+        };
+
+        // ===== CONSTANTS =====
+        const COLORS = {
+            bg: '#000000',
+            amber: '#FFB800',
+            amberDark: '#CC9900',
+            amberLight: '#FFD700',
+            green: '#4CAF50',
+            blue: '#2196F3',
+            red: '#F44336',
+            purple: '#9C27B0',
+            orange: '#FF9800',
+            cyan: '#00BCD4'
+        };
+
+        const STREET_COLORS = [
+            { name: 'Green', color: '#4CAF50' },
+            { name: 'Blue', color: '#2196F3' },
+            { name: 'Red', color: '#F44336' },
+            { name: 'Purple', color: '#9C27B0' },
+            { name: 'Orange', color: '#FF9800' },
+            { name: 'Cyan', color: '#00BCD4' },
+            { name: 'Yellow', color: '#FFD700' },
+            { name: 'Pink', color: '#E91E63' }
+        ];
+
+        const STICKER_TYPES = ['HOLD', 'FORWARD', 'TEMP', 'ALERT', 'NOTE'];
+
+        // ===== SAMPLE DATA =====
+        const sampleAddresses = [
+            { id: 1, number: "101", street: "Main St", color: "#4CAF50", cellWidth: 1, stickers: [] },
+            { id: 2, number: "105", street: "Main St", color: "#4CAF50", cellWidth: 1, stickers: [
+                { type: "HOLD", expires: "2026-02-15", note: "Vacation hold" }
+            ]},
+            { id: 3, number: "109", street: "Main St", color: "#4CAF50", cellWidth: 1, stickers: [] },
+            { id: 4, number: "113", street: "Main St", color: "#4CAF50", cellWidth: 2, stickers: [] },
+            { id: 5, number: "202", street: "Oak Ave", color: "#2196F3", cellWidth: 2, stickers: [] },
+            { id: 6, number: "204", street: "Oak Ave", color: "#2196F3", cellWidth: 1, stickers: [
+                { type: "FORWARD", expires: "2026-03-01", note: "Forward to 555 Pine St" }
+            ]},
+            { id: 7, number: "206", street: "Oak Ave", color: "#2196F3", cellWidth: 1, stickers: [] },
+            { id: 8, number: "210", street: "Oak Ave", color: "#2196F3", cellWidth: 1, stickers: [] },
+            { id: 9, number: "305", street: "Elm Dr", color: "#F44336", cellWidth: 1, stickers: [] },
+            { id: 10, number: "307", street: "Elm Dr", color: "#F44336", cellWidth: 2, stickers: [] },
+            { id: 11, number: "311", street: "Elm Dr", color: "#F44336", cellWidth: 1, stickers: [] },
+            { id: 12, number: "401", street: "Pine Rd", color: "#9C27B0", cellWidth: 1, stickers: [
+                { type: "TEMP", expires: "2026-02-05", note: "Leave at door" }
+            ]},
+            { id: 13, number: "405", street: "Pine Rd", color: "#9C27B0", cellWidth: 1, stickers: [] },
+            { id: 14, number: "409", street: "Pine Rd", color: "#9C27B0", cellWidth: 3, stickers: [] },
+            { id: 15, number: "501", street: "Maple Ln", color: "#FF9800", cellWidth: 1, stickers: [] },
+            { id: 16, number: "505", street: "Maple Ln", color: "#FF9800", cellWidth: 2, stickers: [] },
+            { id: 17, number: "509", street: "Maple Ln", color: "#FF9800", cellWidth: 1, stickers: [] },
+            { id: 18, number: "513", street: "Maple Ln", color: "#FF9800", cellWidth: 1, stickers: [] },
+            { id: 19, number: "601", street: "Cedar Way", color: "#00BCD4", cellWidth: 2, stickers: [] },
+            { id: 20, number: "605", street: "Cedar Way", color: "#00BCD4", cellWidth: 1, stickers: [] },
+            { id: 21, number: "609", street: "Cedar Way", color: "#00BCD4", cellWidth: 1, stickers: [] },
+            { id: 22, number: "701", street: "Birch Ct", color: "#FFD700", cellWidth: 1, stickers: [
+                { type: "ALERT", expires: "2026-02-01", note: "Dog on property" }
+            ]},
+            { id: 23, number: "705", street: "Birch Ct", color: "#FFD700", cellWidth: 2, stickers: [] },
+            { id: 24, number: "709", street: "Birch Ct", color: "#FFD700", cellWidth: 1, stickers: [] },
+            { id: 25, number: "801", street: "Willow Ave", color: "#E91E63", cellWidth: 1, stickers: [] },
+            { id: 26, number: "805", street: "Willow Ave", color: "#E91E63", cellWidth: 1, stickers: [] },
+            { id: 27, number: "809", street: "Willow Ave", color: "#E91E63", cellWidth: 2, stickers: [] },
+            { id: 28, number: "901", street: "Ash Blvd", color: "#4CAF50", cellWidth: 1, stickers: [] },
+            { id: 29, number: "905", street: "Ash Blvd", color: "#4CAF50", cellWidth: 1, stickers: [] },
+            { id: 30, number: "909", street: "Ash Blvd", color: "#4CAF50", cellWidth: 1, stickers: [] }
+        ];
+
+        // ===== INITIALIZATION =====
+        function init() {
+            state.canvas = document.getElementById('case-canvas');
+            state.ctx = state.canvas.getContext('2d');
+
+            // Load addresses from localStorage or use sample
+            const saved = localStorage.getItem('caseAddresses');
+            state.addresses = saved ? JSON.parse(saved) : [...sampleAddresses];
+
+            // Create wing configuration (3-wing standard)
+            state.wings = [
+                { id: 'left', type: '124-D', cells: 240, shelves: 6, x: 50, y: 100, hasDesk: false },
+                { id: 'middle', type: '144-D', cells: 240, shelves: 6, x: 550, y: 100, hasDesk: true },
+                { id: 'right', type: '124-D', cells: 240, shelves: 6, x: 1050, y: 100, hasDesk: false }
+            ];
+
+            resizeCanvas();
+            setupEventListeners();
+            setupColorPicker();
+
+            requestAnimationFrame(animate);
+        }
+
+        function resizeCanvas() {
+            const container = document.getElementById('canvas-container');
+            state.canvas.width = Math.max(1600, container.clientWidth);
+            state.canvas.height = Math.max(900, container.clientHeight);
+        }
+
+        function setupColorPicker() {
+            const picker = document.getElementById('color-picker');
+            STREET_COLORS.forEach(sc => {
+                const div = document.createElement('div');
+                div.className = 'color-option';
+                div.style.backgroundColor = sc.color;
+                div.dataset.color = sc.color;
+                div.title = sc.name;
+                div.onclick = () => {
+                    document.querySelectorAll('.color-option').forEach(el => el.classList.remove('selected'));
+                    div.classList.add('selected');
+                };
+                picker.appendChild(div);
+            });
+        }
+
+        // ===== EVENT LISTENERS =====
+        function setupEventListeners() {
+            state.canvas.addEventListener('mousemove', handleMouseMove);
+            state.canvas.addEventListener('click', handleClick);
+            state.canvas.addEventListener('contextmenu', handleRightClick);
+            document.getElementById('canvas-container').addEventListener('scroll', handleScroll);
+
+            document.getElementById('zoom-btn').addEventListener('click', toggleZoom);
+            document.getElementById('reset-btn').addEventListener('click', resetView);
+            document.getElementById('save-btn').addEventListener('click', saveCell);
+            document.getElementById('cancel-btn').addEventListener('click', closeSidebar);
+            document.getElementById('add-sticker-btn').addEventListener('click', addSticker);
+
+            document.getElementById('context-menu').addEventListener('click', handleContextMenuClick);
+
+            window.addEventListener('resize', resizeCanvas);
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('#context-menu')) {
+                    hideContextMenu();
+                }
+            });
+        }
+
+        function handleScroll(e) {
+            state.scrollX = e.target.scrollLeft;
+            state.scrollY = e.target.scrollTop;
+        }
+
+        function handleMouseMove(e) {
+            const rect = state.canvas.getBoundingClientRect();
+            state.mouseX = e.clientX - rect.left + state.scrollX;
+            state.mouseY = e.clientY - rect.top + state.scrollY;
+
+            // Check wing hover
+            state.hoveredWing = null;
+            state.hoveredCell = null;
+
+            if (!state.zoom) {
+                for (let wing of state.wings) {
+                    const bounds = getWingBounds(wing);
+                    if (isPointInRect(state.mouseX, state.mouseY, bounds)) {
+                        state.hoveredWing = wing;
+
+                        // Check if hovering over a cell
+                        const cell = getCellAtPoint(wing, state.mouseX, state.mouseY);
+                        if (cell) {
+                            state.hoveredCell = cell;
+                            showTooltip(cell);
+                        } else {
+                            hideTooltip();
+                        }
+                        break;
+                    }
+                }
+                if (!state.hoveredWing) {
+                    hideTooltip();
+                }
+            } else {
+                // Zoom mode - check cells
+                const cell = getCellAtPointZoom(state.mouseX, state.mouseY);
+                if (cell) {
+                    state.hoveredCell = cell;
+                    showTooltip(cell);
+                } else {
+                    state.hoveredCell = null;
+                    hideTooltip();
+                }
+            }
+        }
+
+        function handleClick(e) {
+            hideContextMenu();
+
+            if (state.hoveredCell && state.hoveredCell.type === 'address') {
+                openCellEditor(state.hoveredCell);
+            } else if (state.hoveredWing && !state.hoveredCell) {
+                // Clicked on wing body (not cell)
+                // Would show context menu, but we'll handle that on right-click
+            }
+        }
+
+        function handleRightClick(e) {
+            e.preventDefault();
+
+            if (state.hoveredWing && !state.hoveredCell) {
+                showContextMenu(e.clientX, e.clientY, state.hoveredWing);
+            }
+        }
+
+        function handleContextMenuClick(e) {
+            const action = e.target.dataset.action;
+            if (action === 'remove') {
+                alert('Remove equipment functionality would be implemented here');
+            } else if (action === 'change') {
+                alert('Change equipment type functionality would be implemented here');
+            }
+            hideContextMenu();
+        }
+
+        function toggleZoom() {
+            state.zoom = !state.zoom;
+            document.getElementById('zoom-btn').classList.toggle('active', state.zoom);
+            if (state.zoom) {
+                state.zoomedShelf = 1; // Zoom to shelf 1
+            } else {
+                state.zoomedShelf = null;
+            }
+        }
+
+        function resetView() {
+            state.zoom = false;
+            state.zoomedShelf = null;
+            document.getElementById('zoom-btn').classList.remove('active');
+            closeSidebar();
+        }
+
+        // ===== UI FUNCTIONS =====
+        function showContextMenu(x, y, wing) {
+            const menu = document.getElementById('context-menu');
+            menu.style.left = x + 'px';
+            menu.style.top = y + 'px';
+            menu.style.display = 'block';
+        }
+
+        function hideContextMenu() {
+            document.getElementById('context-menu').style.display = 'none';
+        }
+
+        function showTooltip(cell) {
+            const tooltip = document.getElementById('tooltip');
+            if (cell.type === 'address' && cell.address) {
+                tooltip.innerHTML = `<strong>${cell.address.number} ${cell.address.street}</strong><br>Width: ${cell.address.cellWidth}"`;
+            } else if (cell.type === 'form3982') {
+                tooltip.innerHTML = '<strong>Form 3982</strong><br>Special Instructions';
+            } else if (cell.type === 'reserved') {
+                tooltip.innerHTML = `<strong>${cell.label}</strong><br>Reserved`;
+            }
+            tooltip.style.left = (state.mouseX + 15) + 'px';
+            tooltip.style.top = (state.mouseY + 15) + 'px';
+            tooltip.style.display = 'block';
+        }
+
+        function hideTooltip() {
+            document.getElementById('tooltip').style.display = 'none';
+        }
+
+        function openCellEditor(cell) {
+            if (!cell.address) return;
+
+            state.selectedCell = cell;
+            const addr = cell.address;
+
+            document.getElementById('edit-address-num').value = addr.number || '';
+            document.getElementById('edit-street').value = addr.street || '';
+            document.getElementById('edit-width').value = addr.cellWidth || 1;
+
+            // Set selected color
+            document.querySelectorAll('.color-option').forEach(el => {
+                el.classList.toggle('selected', el.dataset.color === addr.color);
+            });
+
+            // Render stickers
+            renderStickerList(addr.stickers || []);
+
+            document.getElementById('sidebar').classList.add('open');
+        }
+
+        function closeSidebar() {
+            document.getElementById('sidebar').classList.remove('open');
+            state.selectedCell = null;
+        }
+
+        function saveCell() {
+            if (!state.selectedCell || !state.selectedCell.address) return;
+
+            const addr = state.selectedCell.address;
+            addr.number = document.getElementById('edit-address-num').value;
+            addr.street = document.getElementById('edit-street').value;
+            addr.cellWidth = parseInt(document.getElementById('edit-width').value) || 1;
+
+            const selectedColor = document.querySelector('.color-option.selected');
+            if (selectedColor) {
+                addr.color = selectedColor.dataset.color;
+            }
+
+            // Save to localStorage
+            localStorage.setItem('caseAddresses', JSON.stringify(state.addresses));
+
+            closeSidebar();
+        }
+
+        function renderStickerList(stickers) {
+            const list = document.getElementById('sticker-list');
+            list.innerHTML = '';
+
+            stickers.forEach((sticker, idx) => {
+                const item = document.createElement('div');
+                item.className = 'sticker-item';
+                item.innerHTML = `
+                    <div class="sticker-header">
+                        <span class="sticker-type">${sticker.type}</span>
+                        <span style="font-size: 10px; color: #888;">Expires: ${sticker.expires}</span>
+                    </div>
+                    <div class="sticker-details">
+                        <div style="margin-bottom: 8px; color: #ccc;">${sticker.note}</div>
+                        <div style="display: flex; gap: 8px;">
+                            <button class="btn-small" onclick="editSticker(${idx})">EDIT</button>
+                            <button class="btn-small" onclick="removeSticker(${idx})">REMOVE</button>
+                        </div>
+                    </div>
+                `;
+                item.onclick = (e) => {
+                    if (!e.target.closest('button')) {
+                        item.classList.toggle('expanded');
+                    }
+                };
+                list.appendChild(item);
+            });
+        }
+
+        function addSticker() {
+            if (!state.selectedCell || !state.selectedCell.address) return;
+
+            const type = prompt('Sticker type (HOLD, FORWARD, TEMP, ALERT, NOTE):', 'HOLD');
+            if (!type) return;
+
+            const expires = prompt('Expires (YYYY-MM-DD):', '2026-03-01');
+            const note = prompt('Note:', '');
+
+            state.selectedCell.address.stickers.push({ type, expires, note });
+            renderStickerList(state.selectedCell.address.stickers);
+        }
+
+        window.editSticker = function(idx) {
+            if (!state.selectedCell || !state.selectedCell.address) return;
+            const sticker = state.selectedCell.address.stickers[idx];
+
+            const type = prompt('Sticker type:', sticker.type);
+            const expires = prompt('Expires (YYYY-MM-DD):', sticker.expires);
+            const note = prompt('Note:', sticker.note);
+
+            if (type) sticker.type = type;
+            if (expires) sticker.expires = expires;
+            if (note !== null) sticker.note = note;
+
+            renderStickerList(state.selectedCell.address.stickers);
+        };
+
+        window.removeSticker = function(idx) {
+            if (!state.selectedCell || !state.selectedCell.address) return;
+            state.selectedCell.address.stickers.splice(idx, 1);
+            renderStickerList(state.selectedCell.address.stickers);
+        };
+
+        // ===== GEOMETRY HELPERS =====
+        function getWingBounds(wing) {
+            const cellsPerRow = wing.cells / wing.shelves;
+            const cellSize = 10; // px per inch
+            const width = cellsPerRow * cellSize;
+            const height = 350;
+            return { x: wing.x, y: wing.y, width, height };
+        }
+
+        function isPointInRect(px, py, rect) {
+            return px >= rect.x && px <= rect.x + rect.width &&
+                   py >= rect.y && py <= rect.y + rect.height;
+        }
+
+        function getCellAtPoint(wing, px, py) {
+            const bounds = getWingBounds(wing);
+            if (!isPointInRect(px, py, bounds)) return null;
+
+            const shelfHeight = 350 / 6;
+            const shelfIdx = 5 - Math.floor((py - bounds.y) / shelfHeight); // Bottom to top (shelf 1-6)
+            if (shelfIdx < 0 || shelfIdx > 5) return null;
+
+            const cellsPerRow = wing.cells / wing.shelves;
+            const cellWidth = 10; // px per inch
+
+            const cellIdx = Math.floor((px - bounds.x) / cellWidth);
+            if (cellIdx < 0 || cellIdx >= cellsPerRow) return null;
+
+            // Determine cell type
+            const absoluteCellIdx = cellIdx; // 0-based within this wing's row
+
+            // Check if Form 3982 (first cell)
+            if (absoluteCellIdx === 0) {
+                return { type: 'form3982', wing, shelf: shelfIdx + 1, cellIdx };
+            }
+
+            // Check if reserved (shelf 1, last 8 cells, only on right wing)
+            if (shelfIdx === 0 && wing.id === 'right') {
+                const cellsPerRow = wing.cells / wing.shelves;
+                if (absoluteCellIdx >= cellsPerRow - 8) {
+                    const reservedLabels = ['MACH', 'NON-MACH', 'NON-MACH', 'UTF', 'IA', 'NSN', 'ANK', 'OTHER'];
+                    const reservedIdx = absoluteCellIdx - (cellsPerRow - 8);
+                    return { type: 'reserved', label: reservedLabels[reservedIdx], wing, shelf: 1, cellIdx };
+                }
+            }
+
+            // Address cell - find which address
+            const address = getAddressForCell(wing, shelfIdx + 1, absoluteCellIdx);
+            return { type: 'address', address, wing, shelf: shelfIdx + 1, cellIdx };
+        }
+
+        function getCellAtPointZoom(px, py) {
+            // Simplified for demo - would expand in zoom mode
+            return null;
+        }
+
+        function getAddressForCell(wing, shelf, cellIdx) {
+            // Simple linear distribution for demo
+            // In real app, would calculate based on delivery sequence
+            const index = (shelf - 1) * 5 + Math.floor(cellIdx / 8);
+            return state.addresses[index % state.addresses.length];
+        }
+
+        // ===== RENDERING =====
+        function animate() {
+            draw();
+            requestAnimationFrame(animate);
+        }
+
+        function draw() {
+            const ctx = state.ctx;
+
+            // Clear
+            ctx.fillStyle = COLORS.bg;
+            ctx.fillRect(0, 0, state.canvas.width, state.canvas.height);
+
+            if (!state.zoom) {
+                drawNormalView(ctx);
+            } else {
+                drawZoomView(ctx);
+            }
+        }
+
+        function drawNormalView(ctx) {
+            // Draw wings
+            state.wings.forEach(wing => {
+                drawWing(ctx, wing);
+            });
+        }
+
+        function drawWing(ctx, wing) {
+            const bounds = getWingBounds(wing);
+            const isHovered = state.hoveredWing === wing;
+
+            // Animate glow
+            if (isHovered) {
+                state.glowIntensity = Math.min(1, state.glowIntensity + 0.1);
+            } else {
+                state.glowIntensity = Math.max(0, state.glowIntensity - 0.1);
+            }
+
+            // Draw glow
+            if (state.glowIntensity > 0) {
+                ctx.shadowBlur = 20 * state.glowIntensity;
+                ctx.shadowColor = COLORS.amber;
+            }
+
+            // Wing outline
+            ctx.strokeStyle = isHovered ? COLORS.amberLight : COLORS.amber;
+            ctx.lineWidth = 2;
+            ctx.strokeRect(bounds.x, bounds.y, bounds.width, bounds.height);
+
+            // Wing label
+            ctx.fillStyle = COLORS.amber;
+            ctx.font = 'bold 14px Courier New';
+            ctx.textAlign = 'center';
+            ctx.fillText(`${wing.type}${wing.hasDesk ? ' (DESK)' : ''}`,
+                         bounds.x + bounds.width / 2, bounds.y - 10);
+
+            ctx.shadowBlur = 0;
+
+            // Draw shelves
+            const shelfHeight = 350 / 6;
+            for (let i = 0; i < 6; i++) {
+                const shelfY = bounds.y + (5 - i) * shelfHeight; // Bottom to top
+                const shelfNum = i + 1;
+
+                // Shelf divider
+                ctx.strokeStyle = COLORS.amberDark;
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(bounds.x, shelfY);
+                ctx.lineTo(bounds.x + bounds.width, shelfY);
+                ctx.stroke();
+
+                // Shelf label
+                ctx.fillStyle = COLORS.amberDark;
+                ctx.font = '10px Courier New';
+                ctx.textAlign = 'left';
+                ctx.fillText(`${shelfNum}`, bounds.x - 20, shelfY + shelfHeight / 2);
+
+                // Draw cells
+                drawShelfCells(ctx, wing, shelfNum, bounds.x, shelfY, bounds.width, shelfHeight);
+            }
+        }
+
+        function drawShelfCells(ctx, wing, shelf, x, y, width, height) {
+            const cellsPerRow = wing.cells / wing.shelves;
+            const cellWidth = width / cellsPerRow;
+
+            for (let i = 0; i < cellsPerRow; i++) {
+                const cellX = x + i * cellWidth;
+
+                // Determine cell type
+                let cellColor = COLORS.amberDark;
+                let fillCell = false;
+
+                // Form 3982 (first cell)
+                if (i === 0) {
+                    cellColor = COLORS.amber;
+                    fillCell = true;
+                    ctx.fillStyle = 'rgba(255, 184, 0, 0.2)';
+                    ctx.fillRect(cellX, y, cellWidth, height);
+                }
+                // Reserved cells (shelf 1, last 8, right wing only)
+                else if (shelf === 1 && wing.id === 'right' && i >= cellsPerRow - 8) {
+                    cellColor = COLORS.orange;
+                    fillCell = true;
+                    ctx.fillStyle = 'rgba(255, 152, 0, 0.2)';
+                    ctx.fillRect(cellX, y, cellWidth, height);
+                }
+                // Address cells
+                else {
+                    const addr = getAddressForCell(wing, shelf, i);
+                    if (addr) {
+                        cellColor = addr.color;
+                        ctx.fillStyle = addr.color + '20'; // 20 = alpha
+                        ctx.fillRect(cellX, y, cellWidth * addr.cellWidth, height);
+
+                        // Draw stickers
+                        if (addr.stickers && addr.stickers.length > 0) {
+                            addr.stickers.forEach((sticker, idx) => {
+                                const stickerX = cellX + 2 + idx * 6;
+                                const stickerY = y + 2;
+                                ctx.fillStyle = getStickerColor(sticker.type);
+                                ctx.beginPath();
+                                ctx.arc(stickerX, stickerY, 3, 0, Math.PI * 2);
+                                ctx.fill();
+                            });
+                        }
+
+                        // Draw address text (if cell is big enough)
+                        if (cellWidth > 15) {
+                            ctx.fillStyle = COLORS.amber;
+                            ctx.font = '8px Courier New';
+                            ctx.textAlign = 'left';
+                            ctx.fillText(addr.number, cellX + 2, y + height - 4);
+                        }
+                    }
+                }
+
+                // Cell border
+                ctx.strokeStyle = cellColor;
+                ctx.lineWidth = 0.5;
+                ctx.strokeRect(cellX, y, cellWidth, height);
+            }
+        }
+
+        function drawZoomView(ctx) {
+            // Zoomed view of a single shelf
+            const shelf = state.zoomedShelf || 1;
+
+            ctx.fillStyle = COLORS.amber;
+            ctx.font = 'bold 20px Courier New';
+            ctx.textAlign = 'center';
+            ctx.fillText(`SHELF ${shelf} - ZOOM MODE`, state.canvas.width / 2, 50);
+
+            const startY = 100;
+            const cellHeight = 80;
+            const cellWidth = 60;
+
+            // Draw all wings' cells for this shelf
+            let x = 50;
+            state.wings.forEach(wing => {
+                const cellsPerRow = wing.cells / wing.shelves;
+
+                ctx.fillStyle = COLORS.amber;
+                ctx.font = '12px Courier New';
+                ctx.textAlign = 'left';
+                ctx.fillText(`${wing.type}`, x, startY - 10);
+
+                for (let i = 0; i < Math.min(cellsPerRow, 20); i++) { // Limit to first 20 for display
+                    const cellX = x + i * cellWidth;
+
+                    // Get address
+                    const addr = getAddressForCell(wing, shelf, i);
+
+                    // Draw cell
+                    if (addr) {
+                        ctx.fillStyle = addr.color + '40';
+                        ctx.fillRect(cellX, startY, cellWidth * addr.cellWidth, cellHeight);
+
+                        ctx.strokeStyle = addr.color;
+                        ctx.lineWidth = 2;
+                        ctx.strokeRect(cellX, startY, cellWidth * addr.cellWidth, cellHeight);
+
+                        // Address text
+                        ctx.fillStyle = COLORS.amber;
+                        ctx.font = 'bold 14px Courier New';
+                        ctx.textAlign = 'center';
+                        ctx.fillText(addr.number, cellX + (cellWidth * addr.cellWidth) / 2, startY + 30);
+
+                        ctx.font = '11px Courier New';
+                        ctx.fillText(addr.street, cellX + (cellWidth * addr.cellWidth) / 2, startY + 50);
+
+                        // Stickers
+                        if (addr.stickers && addr.stickers.length > 0) {
+                            addr.stickers.forEach((sticker, idx) => {
+                                const stickerX = cellX + 5 + idx * 12;
+                                const stickerY = startY + 5;
+                                ctx.fillStyle = getStickerColor(sticker.type);
+                                ctx.beginPath();
+                                ctx.arc(stickerX, stickerY, 5, 0, Math.PI * 2);
+                                ctx.fill();
+                            });
+                        }
+                    } else {
+                        ctx.strokeStyle = COLORS.amberDark;
+                        ctx.lineWidth = 1;
+                        ctx.strokeRect(cellX, startY, cellWidth, cellHeight);
+                    }
+                }
+
+                x += cellsPerRow * cellWidth + 50;
+                if (x > state.canvas.width - 100) break; // Don't overflow
+            });
+
+            // Instructions
+            ctx.fillStyle = COLORS.amber;
+            ctx.font = '12px Courier New';
+            ctx.textAlign = 'center';
+            ctx.fillText('Click cells to edit | Drag cell edges to resize (demo)', state.canvas.width / 2, state.canvas.height - 30);
+        }
+
+        function getStickerColor(type) {
+            const colors = {
+                'HOLD': '#FF9800',
+                'FORWARD': '#2196F3',
+                'TEMP': '#9C27B0',
+                'ALERT': '#F44336',
+                'NOTE': '#4CAF50'
+            };
+            return colors[type] || '#FFB800';
+        }
+
+        // ===== START =====
+        window.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>

@@ -1,0 +1,1449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EDIT BOOK ASSIST - Route R044 - Team B Demo</title>
+    <style>
+        :root {
+            --bg-black: #0a0a0a;
+            --amber-primary: #F5A623;
+            --amber-bright: #FFD54F;
+            --amber-dark: #D4920B;
+            --amber-glow: rgba(245, 166, 35, 0.5);
+            --text-amber: #FFD54F;
+            --grid-line: rgba(255, 213, 79, 0.1);
+            --reserved-amber: #FF8C42;
+            --alert-red: #FF4444;
+            --sticker-blue: #42A5F5;
+            --sticker-orange: #FF9800;
+            --sticker-red: #F44336;
+            --sticker-green: #66BB6A;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: var(--bg-black);
+            color: var(--text-amber);
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* LED Grid Background */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image:
+                linear-gradient(0deg, transparent 24%, var(--grid-line) 25%, var(--grid-line) 26%, transparent 27%, transparent 74%, var(--grid-line) 75%, var(--grid-line) 76%, transparent 77%, transparent),
+                linear-gradient(90deg, transparent 24%, var(--grid-line) 25%, var(--grid-line) 26%, transparent 27%, transparent 74%, var(--grid-line) 75%, var(--grid-line) 76%, transparent 77%, transparent);
+            background-size: 50px 50px;
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.3;
+        }
+
+        /* Scanline effect */
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                to bottom,
+                transparent 50%,
+                rgba(255, 213, 79, 0.02) 50%
+            );
+            background-size: 100% 4px;
+            pointer-events: none;
+            z-index: 1;
+            animation: scanline 8s linear infinite;
+        }
+
+        @keyframes scanline {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(100vh); }
+        }
+
+        .app-container {
+            position: relative;
+            z-index: 2;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        header {
+            background: linear-gradient(180deg, rgba(245, 166, 35, 0.15) 0%, transparent 100%);
+            border-bottom: 2px solid var(--amber-dark);
+            padding: 20px 40px;
+            box-shadow: 0 0 20px var(--amber-glow);
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1800px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-size: 28px;
+            letter-spacing: 3px;
+            text-shadow: 0 0 10px var(--amber-glow);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .alert-badge {
+            background: var(--alert-red);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 14px;
+            animation: pulse-alert 2s infinite;
+        }
+
+        @keyframes pulse-alert {
+            0%, 100% { opacity: 1; box-shadow: 0 0 5px var(--alert-red); }
+            50% { opacity: 0.7; box-shadow: 0 0 15px var(--alert-red); }
+        }
+
+        .mode-indicator {
+            font-size: 14px;
+            padding: 8px 16px;
+            background: rgba(245, 166, 35, 0.2);
+            border: 1px solid var(--amber-primary);
+            border-radius: 4px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        /* Main Content */
+        main {
+            flex: 1;
+            padding: 40px 20px;
+            max-width: 1800px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        /* Case Container - U-Shape Layout */
+        .case-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            grid-template-rows: auto auto;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .wing {
+            border: 2px solid var(--amber-dark);
+            background: rgba(245, 166, 35, 0.05);
+            border-radius: 8px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .wing:hover {
+            box-shadow: 0 0 30px var(--amber-glow), inset 0 0 20px rgba(245, 166, 35, 0.1);
+            border-color: var(--amber-bright);
+        }
+
+        .wing-header {
+            background: linear-gradient(180deg, var(--amber-dark) 0%, rgba(212, 146, 11, 0.5) 100%);
+            padding: 12px 20px;
+            font-size: 14px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--amber-primary);
+        }
+
+        .wing-menu-btn {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--amber-primary);
+            color: var(--text-amber);
+            padding: 4px 12px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 11px;
+            transition: all 0.2s;
+        }
+
+        .wing-menu-btn:hover {
+            background: var(--amber-primary);
+            color: black;
+        }
+
+        .left-wing {
+            grid-column: 1;
+            grid-row: 1;
+        }
+
+        .middle-wing {
+            grid-column: 2;
+            grid-row: 1;
+        }
+
+        .right-wing {
+            grid-column: 3;
+            grid-row: 1;
+        }
+
+        /* Shelves */
+        .shelves-container {
+            padding: 15px;
+            display: flex;
+            flex-direction: column-reverse; /* Shelf 1 at bottom */
+            gap: 10px;
+        }
+
+        .shelf {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+            padding: 8px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 4px;
+            border: 1px solid rgba(245, 166, 35, 0.2);
+            position: relative;
+        }
+
+        .shelf-label {
+            writing-mode: vertical-rl;
+            transform: rotate(180deg);
+            font-size: 11px;
+            padding: 5px;
+            background: var(--amber-dark);
+            border-radius: 3px;
+            min-width: 25px;
+            text-align: center;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .shelf-label:hover {
+            background: var(--amber-bright);
+            color: black;
+            box-shadow: 0 0 10px var(--amber-glow);
+        }
+
+        .shelf-cells {
+            display: flex;
+            gap: 2px;
+            flex: 1;
+            overflow-x: auto;
+            scrollbar-width: thin;
+            scrollbar-color: var(--amber-dark) transparent;
+        }
+
+        /* Cell Styling */
+        .cell {
+            min-width: 35px;
+            height: 60px;
+            background: linear-gradient(135deg, rgba(245, 166, 35, 0.15) 0%, rgba(212, 146, 11, 0.1) 100%);
+            border: 1px solid var(--amber-dark);
+            border-radius: 3px;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 3px;
+            overflow: hidden;
+        }
+
+        .cell:hover {
+            box-shadow: 0 0 15px var(--amber-glow);
+            border-color: var(--amber-bright);
+            transform: translateY(-2px);
+        }
+
+        .cell.reserved {
+            background: linear-gradient(135deg, rgba(255, 140, 66, 0.3) 0%, rgba(255, 140, 66, 0.15) 100%);
+            border-color: var(--reserved-amber);
+        }
+
+        .cell.form3982 {
+            background: linear-gradient(135deg, rgba(212, 146, 11, 0.4) 0%, rgba(212, 146, 11, 0.2) 100%);
+            font-size: 8px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .cell.address {
+            border-left: 3px solid transparent;
+        }
+
+        .cell.has-alert {
+            animation: pulse-cell 2s infinite;
+        }
+
+        @keyframes pulse-cell {
+            0%, 100% {
+                border-color: var(--amber-dark);
+                box-shadow: 0 0 5px rgba(245, 166, 35, 0.3);
+            }
+            50% {
+                border-color: var(--alert-red);
+                box-shadow: 0 0 20px rgba(255, 68, 68, 0.6);
+            }
+        }
+
+        .cell-address-num {
+            font-size: 11px;
+            font-weight: bold;
+            line-height: 1.2;
+            color: var(--amber-bright);
+        }
+
+        .cell-street-name {
+            font-size: 8px;
+            line-height: 1.2;
+            color: var(--text-amber);
+            opacity: 0.8;
+        }
+
+        .cell-stickers {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            display: flex;
+            gap: 2px;
+        }
+
+        .sticker {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .sticker:hover {
+            transform: scale(1.5);
+            box-shadow: 0 0 8px currentColor;
+        }
+
+        .sticker.FWD { background: var(--sticker-blue); }
+        .sticker.HOLD { background: var(--sticker-orange); }
+        .sticker.VAC { background: var(--sticker-green); }
+        .sticker.DEC { background: var(--sticker-red); }
+        .sticker.ALERT { background: var(--alert-red); }
+
+        .sticker.expired {
+            animation: glow-red 1.5s infinite;
+        }
+
+        @keyframes glow-red {
+            0%, 100% { box-shadow: 0 0 5px var(--alert-red); }
+            50% { box-shadow: 0 0 15px var(--alert-red), 0 0 25px var(--alert-red); }
+        }
+
+        .reserved-label {
+            font-size: 7px;
+            text-align: center;
+            font-weight: bold;
+            line-height: 1.1;
+            color: var(--reserved-amber);
+        }
+
+        /* Edit Panel */
+        .edit-panel {
+            position: fixed;
+            right: -450px;
+            top: 0;
+            width: 450px;
+            height: 100vh;
+            background: linear-gradient(135deg, rgba(10, 10, 10, 0.98) 0%, rgba(30, 30, 30, 0.98) 100%);
+            border-left: 3px solid var(--amber-primary);
+            box-shadow: -5px 0 30px rgba(0, 0, 0, 0.8);
+            transition: right 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            z-index: 1000;
+            overflow-y: auto;
+            padding: 30px;
+        }
+
+        .edit-panel.open {
+            right: 0;
+        }
+
+        .edit-panel h2 {
+            font-size: 20px;
+            margin-bottom: 25px;
+            text-shadow: 0 0 10px var(--amber-glow);
+            letter-spacing: 2px;
+            border-bottom: 2px solid var(--amber-dark);
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            opacity: 0.9;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--amber-dark);
+            border-radius: 4px;
+            color: var(--text-amber);
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--amber-bright);
+            box-shadow: 0 0 10px var(--amber-glow);
+        }
+
+        .color-swatches {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .color-swatch {
+            width: 100%;
+            height: 40px;
+            border-radius: 4px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .color-swatch:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 15px currentColor;
+        }
+
+        .color-swatch.selected {
+            border-color: var(--amber-bright);
+            box-shadow: 0 0 15px var(--amber-bright);
+        }
+
+        .cell-preview {
+            background: rgba(0, 0, 0, 0.5);
+            border: 2px solid var(--amber-dark);
+            border-radius: 4px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .cell-preview-inner {
+            display: inline-block;
+            min-width: 80px;
+            height: 120px;
+            background: linear-gradient(135deg, rgba(245, 166, 35, 0.15) 0%, rgba(212, 146, 11, 0.1) 100%);
+            border: 2px solid var(--amber-dark);
+            border-radius: 4px;
+            border-left-width: 6px;
+            padding: 10px;
+            position: relative;
+        }
+
+        .stickers-list {
+            margin-top: 15px;
+        }
+
+        .sticker-item {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--amber-dark);
+            border-radius: 4px;
+            padding: 10px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .sticker-info {
+            flex: 1;
+        }
+
+        .sticker-type {
+            font-weight: bold;
+            font-size: 12px;
+            margin-bottom: 4px;
+        }
+
+        .sticker-details {
+            font-size: 10px;
+            opacity: 0.7;
+        }
+
+        .btn {
+            background: var(--amber-dark);
+            color: black;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s;
+            margin-right: 10px;
+        }
+
+        .btn:hover {
+            background: var(--amber-bright);
+            box-shadow: 0 0 15px var(--amber-glow);
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: rgba(245, 166, 35, 0.2);
+            color: var(--text-amber);
+            border: 1px solid var(--amber-dark);
+        }
+
+        .btn-danger {
+            background: var(--alert-red);
+            color: white;
+        }
+
+        .btn-small {
+            padding: 5px 10px;
+            font-size: 10px;
+        }
+
+        .action-buttons {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px solid var(--amber-dark);
+            display: flex;
+            gap: 10px;
+        }
+
+        /* Footer */
+        footer {
+            background: linear-gradient(0deg, rgba(245, 166, 35, 0.15) 0%, transparent 100%);
+            border-top: 2px solid var(--amber-dark);
+            padding: 20px 40px;
+            font-size: 12px;
+            text-align: center;
+        }
+
+        .footer-stats {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin-bottom: 10px;
+        }
+
+        .stat {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .stat-label {
+            opacity: 0.7;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .stat-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--amber-bright);
+            text-shadow: 0 0 5px var(--amber-glow);
+        }
+
+        /* Popover for sticker details */
+        .popover {
+            position: absolute;
+            background: rgba(10, 10, 10, 0.98);
+            border: 2px solid var(--amber-primary);
+            border-radius: 6px;
+            padding: 15px;
+            min-width: 200px;
+            z-index: 2000;
+            box-shadow: 0 5px 25px rgba(0, 0, 0, 0.8), 0 0 20px var(--amber-glow);
+            display: none;
+        }
+
+        .popover.show {
+            display: block;
+        }
+
+        .popover h3 {
+            font-size: 14px;
+            margin-bottom: 10px;
+            color: var(--amber-bright);
+        }
+
+        .popover p {
+            font-size: 11px;
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
+
+        .popover-actions {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid var(--amber-dark);
+            display: flex;
+            gap: 8px;
+        }
+
+        /* Context Menu */
+        .context-menu {
+            position: absolute;
+            background: rgba(10, 10, 10, 0.98);
+            border: 2px solid var(--amber-primary);
+            border-radius: 6px;
+            box-shadow: 0 5px 25px rgba(0, 0, 0, 0.8), 0 0 20px var(--amber-glow);
+            z-index: 2000;
+            display: none;
+        }
+
+        .context-menu.show {
+            display: block;
+        }
+
+        .context-menu-item {
+            padding: 12px 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 12px;
+            border-bottom: 1px solid rgba(245, 166, 35, 0.2);
+        }
+
+        .context-menu-item:last-child {
+            border-bottom: none;
+        }
+
+        .context-menu-item:hover {
+            background: var(--amber-dark);
+            color: black;
+        }
+
+        /* Breadcrumb */
+        .breadcrumb {
+            padding: 15px 40px;
+            background: rgba(245, 166, 35, 0.1);
+            border-bottom: 1px solid var(--amber-dark);
+            font-size: 12px;
+            display: none;
+        }
+
+        .breadcrumb.show {
+            display: block;
+        }
+
+        .breadcrumb a {
+            color: var(--amber-bright);
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .breadcrumb a:hover {
+            text-shadow: 0 0 10px var(--amber-glow);
+        }
+
+        /* Responsive */
+        @media (max-width: 1400px) {
+            .case-container {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .left-wing, .middle-wing, .right-wing {
+                grid-column: 1;
+                grid-row: auto;
+            }
+        }
+
+        /* Width modifiers for cells */
+        .cell.w-2 { min-width: 72px; }
+        .cell.w-3 { min-width: 109px; }
+        .cell.w-4 { min-width: 146px; }
+
+        /* Add sticker form */
+        .add-sticker-form {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--amber-dark);
+            border-radius: 4px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+
+        .add-sticker-form select {
+            width: 100%;
+            padding: 8px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--amber-dark);
+            border-radius: 4px;
+            color: var(--text-amber);
+            font-family: 'Courier New', monospace;
+            margin-bottom: 10px;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: transparent;
+            border: none;
+            color: var(--text-amber);
+            font-size: 24px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .close-btn:hover {
+            color: var(--amber-bright);
+            text-shadow: 0 0 10px var(--amber-glow);
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <header>
+            <div class="header-content">
+                <h1>
+                    EDIT BOOK ASSIST — ROUTE R044
+                    <span class="alert-badge" id="alertBadge">2 ALERTS</span>
+                </h1>
+                <div class="mode-indicator" id="modeIndicator">EQUIPMENT MODE</div>
+            </div>
+        </header>
+
+        <div class="breadcrumb" id="breadcrumb">
+            <a onclick="exitZoom()">← Full Case</a>
+        </div>
+
+        <main>
+            <div class="case-container" id="caseContainer">
+                <!-- Wings will be rendered by JavaScript -->
+            </div>
+        </main>
+
+        <footer>
+            <div class="footer-stats">
+                <div class="stat">
+                    <span class="stat-label">Total Wings</span>
+                    <span class="stat-value">3</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">Total Cells</span>
+                    <span class="stat-value" id="totalCells">720</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">Usable Cells</span>
+                    <span class="stat-value" id="usableCells">706</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">Addresses</span>
+                    <span class="stat-value" id="addressCount">0</span>
+                </div>
+            </div>
+            <div style="opacity: 0.6; margin-top: 10px;">
+                TEAM B DEMO — Pure DOM/CSS — LED Console Style
+            </div>
+        </footer>
+
+        <!-- Edit Panel -->
+        <div class="edit-panel" id="editPanel">
+            <button class="close-btn" onclick="closeEditPanel()">×</button>
+            <h2>EDIT ADDRESS</h2>
+
+            <div class="form-group">
+                <label>Address Number</label>
+                <input type="text" id="editAddressNum" placeholder="e.g. 1001">
+            </div>
+
+            <div class="form-group">
+                <label>Street Name</label>
+                <input type="text" id="editStreetName" placeholder="e.g. Maple Dr">
+            </div>
+
+            <div class="form-group">
+                <label>Street Color</label>
+                <div class="color-swatches" id="colorSwatches">
+                    <!-- Colors will be added by JS -->
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Cell Width</label>
+                <select id="editCellWidth">
+                    <option value="1">1 inch</option>
+                    <option value="2">2 inches</option>
+                    <option value="3">3 inches</option>
+                    <option value="4">4 inches</option>
+                </select>
+            </div>
+
+            <div class="cell-preview">
+                <div class="cell-preview-inner" id="cellPreview">
+                    <div class="cell-address-num" id="previewNum">1001</div>
+                    <div class="cell-street-name" id="previewStreet">Maple Dr</div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Stickers</label>
+                <div class="stickers-list" id="stickersList">
+                    <!-- Stickers will be added by JS -->
+                </div>
+                <button class="btn btn-secondary btn-small" onclick="showAddStickerForm()">+ Add Sticker</button>
+
+                <div class="add-sticker-form" id="addStickerForm" style="display: none;">
+                    <select id="stickerType">
+                        <option value="">Select Type</option>
+                        <option value="FWD">Forward</option>
+                        <option value="HOLD">Hold</option>
+                        <option value="VAC">Vacant</option>
+                        <option value="DEC">Deceased</option>
+                        <option value="ALERT">Other</option>
+                    </select>
+                    <input type="date" id="stickerExpires" placeholder="Expiration Date">
+                    <input type="text" id="stickerNote" placeholder="Note">
+                    <div style="margin-top: 10px;">
+                        <button class="btn btn-small" onclick="addSticker()">Add</button>
+                        <button class="btn btn-secondary btn-small" onclick="cancelAddSticker()">Cancel</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="action-buttons">
+                <button class="btn" onclick="saveAddress()">SAVE</button>
+                <button class="btn btn-secondary" onclick="closeEditPanel()">CANCEL</button>
+                <button class="btn btn-danger" onclick="deleteAddress()">DELETE</button>
+            </div>
+        </div>
+
+        <!-- Popover for sticker details -->
+        <div class="popover" id="stickerPopover">
+            <h3 id="popoverTitle">Forward</h3>
+            <p id="popoverExpires"><strong>Expires:</strong> 2026-02-15</p>
+            <p id="popoverNote">Note text here</p>
+            <div class="popover-actions">
+                <button class="btn btn-small" onclick="editStickerFromPopover()">Edit</button>
+                <button class="btn btn-danger btn-small" onclick="removeStickerFromPopover()">Remove</button>
+            </div>
+        </div>
+
+        <!-- Context Menu -->
+        <div class="context-menu" id="contextMenu">
+            <div class="context-menu-item" onclick="changeEquipment()">Change Equipment Type</div>
+            <div class="context-menu-item" onclick="removeEquipment()">Remove Wing</div>
+            <div class="context-menu-item" onclick="addWing()">Add Wing</div>
+        </div>
+    </div>
+
+    <script>
+        // Sample route data
+        const sampleRoute = {
+            routeId: "R044",
+            carrier: "Demo Carrier",
+            office: "Sample Post Office",
+            addresses: [
+                { seq: 1, number: "1001", street: "Maple Dr", color: "#66BB6A", width: 1, stickers: [] },
+                { seq: 2, number: "1005", street: "Maple Dr", color: "#66BB6A", width: 1, stickers: [
+                    { type: "HOLD", expires: "2026-02-15", note: "Vacation — resume 2/16" }
+                ]},
+                { seq: 3, number: "1009", street: "Maple Dr", color: "#66BB6A", width: 2, stickers: [] },
+                { seq: 4, number: "1013", street: "Maple Dr", color: "#66BB6A", width: 1, stickers: [] },
+                { seq: 5, number: "1017", street: "Maple Dr", color: "#66BB6A", width: 1, stickers: [] },
+                { seq: 6, number: "220", street: "Cedar Ln", color: "#42A5F5", width: 1, stickers: [
+                    { type: "FWD", expires: "2026-06-01", note: "→ 555 Pine St, Anytown 12345" }
+                ]},
+                { seq: 7, number: "222", street: "Cedar Ln", color: "#42A5F5", width: 1, stickers: [
+                    { type: "FWD", expires: "2026-02-01", note: "EXPIRED — → 100 Elm, City 54321" }
+                ]},
+                { seq: 8, number: "224", street: "Cedar Ln", color: "#42A5F5", width: 1, stickers: [] },
+                { seq: 9, number: "226", street: "Cedar Ln", color: "#42A5F5", width: 2, stickers: [] },
+                { seq: 10, number: "400", street: "Oak Ave", color: "#FFA726", width: 1, stickers: [] },
+                { seq: 11, number: "402", street: "Oak Ave", color: "#FFA726", width: 1, stickers: [] },
+                { seq: 12, number: "404", street: "Oak Ave", color: "#FFA726", width: 1, stickers: [] },
+                { seq: 13, number: "101", street: "Pine Rd", color: "#AB47BC", width: 1, stickers: [] },
+                { seq: 14, number: "103", street: "Pine Rd", color: "#AB47BC", width: 1, stickers: [] },
+                { seq: 15, number: "105", street: "Pine Rd", color: "#AB47BC", width: 3, stickers: [] },
+                { seq: 16, number: "107", street: "Pine Rd", color: "#AB47BC", width: 1, stickers: [] },
+                { seq: 17, number: "555", street: "Birch St", color: "#EF5350", width: 1, stickers: [] },
+                { seq: 18, number: "557", street: "Birch St", color: "#EF5350", width: 1, stickers: [
+                    { type: "VAC", expires: "2026-03-01", note: "Vacant property" }
+                ]},
+                { seq: 19, number: "559", street: "Birch St", color: "#EF5350", width: 2, stickers: [] },
+                { seq: 20, number: "561", street: "Birch St", color: "#EF5350", width: 1, stickers: [] },
+                { seq: 21, number: "800", street: "Elm Way", color: "#26C6DA", width: 1, stickers: [] },
+                { seq: 22, number: "802", street: "Elm Way", color: "#26C6DA", width: 1, stickers: [] },
+                { seq: 23, number: "804", street: "Elm Way", color: "#26C6DA", width: 1, stickers: [] },
+                { seq: 24, number: "806", street: "Elm Way", color: "#26C6DA", width: 2, stickers: [] },
+                { seq: 25, number: "808", street: "Elm Way", color: "#26C6DA", width: 1, stickers: [] },
+                { seq: 26, number: "810", street: "Elm Way", color: "#26C6DA", width: 1, stickers: [] },
+                { seq: 27, number: "900", street: "Ash Ct", color: "#7E57C2", width: 1, stickers: [] },
+                { seq: 28, number: "902", street: "Ash Ct", color: "#7E57C2", width: 1, stickers: [] },
+                { seq: 29, number: "904", street: "Ash Ct", color: "#7E57C2", width: 1, stickers: [] },
+                { seq: 30, number: "906", street: "Ash Ct", color: "#7E57C2", width: 1, stickers: [] },
+            ]
+        };
+
+        // State
+        let currentEditCell = null;
+        let currentMode = 'equipment';
+        const wings = [
+            { id: 'left', type: '124-D', cells: 240, position: 'Left Wing' },
+            { id: 'middle', type: '144-D', cells: 240, position: 'Middle Wing' },
+            { id: 'right', type: '124-D', cells: 240, position: 'Right Wing' }
+        ];
+
+        const streetColors = [
+            '#66BB6A', '#42A5F5', '#FFA726', '#AB47BC', '#EF5350', '#26C6DA',
+            '#7E57C2', '#8D6E63', '#78909C', '#FFD54F', '#FF7043', '#9CCC65'
+        ];
+
+        // Reserved cells configuration
+        const reservedCells = [
+            { label: 'MACH', width: 1 },
+            { label: 'NON-MACH', width: 2 },
+            { label: 'UTF', width: 1 },
+            { label: 'IA', width: 1 },
+            { label: 'NSN', width: 1 },
+            { label: 'ANK', width: 1 },
+            { label: 'OTHER', width: 1 }
+        ];
+
+        // Initialize
+        function init() {
+            renderCase();
+            updateStats();
+            setupColorSwatches();
+
+            // Close context menu on click outside
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('.context-menu') && !e.target.closest('.wing-menu-btn')) {
+                    hideContextMenu();
+                }
+            });
+
+            // Close popover on click outside
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('.sticker') && !e.target.closest('.popover')) {
+                    hidePopover();
+                }
+            });
+        }
+
+        function renderCase() {
+            const container = document.getElementById('caseContainer');
+            container.innerHTML = '';
+
+            wings.forEach(wing => {
+                const wingEl = createWing(wing);
+                container.appendChild(wingEl);
+            });
+        }
+
+        function createWing(wing) {
+            const wingEl = document.createElement('div');
+            wingEl.className = `wing ${wing.id}-wing`;
+            wingEl.dataset.wingId = wing.id;
+
+            const header = document.createElement('div');
+            header.className = 'wing-header';
+            header.innerHTML = `
+                <span>${wing.position} — ${wing.type} (${wing.cells} cells)</span>
+                <button class="wing-menu-btn" onclick="showWingMenu(event, '${wing.id}')">⚙</button>
+            `;
+            wingEl.appendChild(header);
+
+            const shelvesContainer = document.createElement('div');
+            shelvesContainer.className = 'shelves-container';
+
+            // 6 shelves per wing
+            for (let shelf = 1; shelf <= 6; shelf++) {
+                const shelfEl = createShelf(wing, shelf);
+                shelvesContainer.appendChild(shelfEl);
+            }
+
+            wingEl.appendChild(shelvesContainer);
+            return wingEl;
+        }
+
+        function createShelf(wing, shelfNum) {
+            const shelfEl = document.createElement('div');
+            shelfEl.className = 'shelf';
+            shelfEl.dataset.shelf = shelfNum;
+
+            const label = document.createElement('div');
+            label.className = 'shelf-label';
+            label.textContent = `S${shelfNum}`;
+            label.onclick = () => zoomToShelf(wing.id, shelfNum);
+            shelfEl.appendChild(label);
+
+            const cellsContainer = document.createElement('div');
+            cellsContainer.className = 'shelf-cells';
+
+            const cellsPerShelf = wing.cells / 6;
+            let cellsRendered = 0;
+
+            // First cell: Form 3982
+            const form3982 = document.createElement('div');
+            form3982.className = 'cell form3982';
+            form3982.textContent = 'FORM 3982';
+            cellsContainer.appendChild(form3982);
+            cellsRendered++;
+
+            // Address cells
+            const addressesForThisShelf = getAddressesForShelf(wing.id, shelfNum);
+            addressesForThisShelf.forEach(addr => {
+                const cellEl = createAddressCell(addr, wing.id, shelfNum);
+                cellsContainer.appendChild(cellEl);
+                cellsRendered += addr.width;
+            });
+
+            // Fill remaining cells
+            const remaining = cellsPerShelf - cellsRendered;
+            if (shelfNum === 1 && wing.id === 'right') {
+                // Last 8 cells on shelf 1 of right wing are reserved
+                const fillCount = remaining - 8;
+                for (let i = 0; i < fillCount; i++) {
+                    const emptyCell = document.createElement('div');
+                    emptyCell.className = 'cell';
+                    emptyCell.onclick = () => openEditPanel(null, wing.id, shelfNum);
+                    cellsContainer.appendChild(emptyCell);
+                }
+
+                // Reserved cells
+                reservedCells.forEach(reserved => {
+                    const reservedCell = document.createElement('div');
+                    reservedCell.className = `cell reserved w-${reserved.width}`;
+                    reservedCell.innerHTML = `<div class="reserved-label">${reserved.label}</div>`;
+                    cellsContainer.appendChild(reservedCell);
+                });
+            } else {
+                for (let i = 0; i < remaining; i++) {
+                    const emptyCell = document.createElement('div');
+                    emptyCell.className = 'cell';
+                    emptyCell.onclick = () => openEditPanel(null, wing.id, shelfNum);
+                    cellsContainer.appendChild(emptyCell);
+                }
+            }
+
+            shelfEl.appendChild(cellsContainer);
+            return shelfEl;
+        }
+
+        function getAddressesForShelf(wingId, shelfNum) {
+            // Distribute addresses across shelves
+            // For demo: put more addresses on lower shelves
+            const filtered = sampleRoute.addresses.filter((addr, idx) => {
+                const assignedShelf = ((idx % 18) % 6) + 1;
+                const assignedWing = Math.floor(idx / 6) % 3;
+                const wingMapping = ['left', 'middle', 'right'];
+                return assignedShelf === shelfNum && wingMapping[assignedWing] === wingId;
+            });
+            return filtered;
+        }
+
+        function createAddressCell(address, wingId, shelfNum) {
+            const cell = document.createElement('div');
+            cell.className = `cell address w-${address.width}`;
+            cell.style.borderLeftColor = address.color;
+            cell.dataset.addressSeq = address.seq;
+
+            const hasAlert = address.stickers.some(s => isExpired(s.expires));
+            if (hasAlert) {
+                cell.classList.add('has-alert');
+            }
+
+            cell.innerHTML = `
+                <div class="cell-address-num">${address.number}</div>
+                <div class="cell-street-name">${address.street}</div>
+            `;
+
+            if (address.stickers && address.stickers.length > 0) {
+                const stickersDiv = document.createElement('div');
+                stickersDiv.className = 'cell-stickers';
+                address.stickers.forEach((sticker, idx) => {
+                    const stickerEl = document.createElement('div');
+                    stickerEl.className = `sticker ${sticker.type}`;
+                    if (isExpired(sticker.expires)) {
+                        stickerEl.classList.add('expired');
+                    }
+                    stickerEl.onclick = (e) => {
+                        e.stopPropagation();
+                        showStickerPopover(e, sticker, address.seq, idx);
+                    };
+                    stickersDiv.appendChild(stickerEl);
+                });
+                cell.appendChild(stickersDiv);
+            }
+
+            cell.onclick = () => openEditPanel(address, wingId, shelfNum);
+            return cell;
+        }
+
+        function isExpired(dateStr) {
+            if (!dateStr) return false;
+            const expDate = new Date(dateStr);
+            const today = new Date();
+            return expDate < today;
+        }
+
+        function openEditPanel(address, wingId, shelfNum) {
+            currentEditCell = address ? { ...address } : {
+                seq: Date.now(),
+                number: '',
+                street: '',
+                color: streetColors[0],
+                width: 1,
+                stickers: [],
+                wingId,
+                shelfNum
+            };
+
+            document.getElementById('editAddressNum').value = currentEditCell.number || '';
+            document.getElementById('editStreetName').value = currentEditCell.street || '';
+            document.getElementById('editCellWidth').value = currentEditCell.width || 1;
+
+            updateColorSelection(currentEditCell.color);
+            updatePreview();
+            renderStickersList();
+
+            document.getElementById('editPanel').classList.add('open');
+            document.getElementById('modeIndicator').textContent = 'EDIT MODE';
+            currentMode = 'edit';
+        }
+
+        function closeEditPanel() {
+            document.getElementById('editPanel').classList.remove('open');
+            document.getElementById('modeIndicator').textContent = 'EQUIPMENT MODE';
+            currentMode = 'equipment';
+            currentEditCell = null;
+        }
+
+        function setupColorSwatches() {
+            const container = document.getElementById('colorSwatches');
+            streetColors.forEach(color => {
+                const swatch = document.createElement('div');
+                swatch.className = 'color-swatch';
+                swatch.style.backgroundColor = color;
+                swatch.dataset.color = color;
+                swatch.onclick = () => selectColor(color);
+                container.appendChild(swatch);
+            });
+        }
+
+        function selectColor(color) {
+            if (currentEditCell) {
+                currentEditCell.color = color;
+                updateColorSelection(color);
+                updatePreview();
+            }
+        }
+
+        function updateColorSelection(color) {
+            document.querySelectorAll('.color-swatch').forEach(swatch => {
+                if (swatch.dataset.color === color) {
+                    swatch.classList.add('selected');
+                } else {
+                    swatch.classList.remove('selected');
+                }
+            });
+        }
+
+        function updatePreview() {
+            const num = document.getElementById('editAddressNum').value || '---';
+            const street = document.getElementById('editStreetName').value || '---';
+            const color = currentEditCell?.color || streetColors[0];
+
+            document.getElementById('previewNum').textContent = num;
+            document.getElementById('previewStreet').textContent = street;
+            document.getElementById('cellPreview').style.borderLeftColor = color;
+        }
+
+        document.getElementById('editAddressNum').addEventListener('input', updatePreview);
+        document.getElementById('editStreetName').addEventListener('input', updatePreview);
+
+        function renderStickersList() {
+            const container = document.getElementById('stickersList');
+            container.innerHTML = '';
+
+            if (!currentEditCell?.stickers || currentEditCell.stickers.length === 0) {
+                container.innerHTML = '<div style="opacity: 0.5; font-size: 11px;">No stickers</div>';
+                return;
+            }
+
+            currentEditCell.stickers.forEach((sticker, idx) => {
+                const item = document.createElement('div');
+                item.className = 'sticker-item';
+
+                const expired = isExpired(sticker.expires);
+                const expiresText = expired ? `<span style="color: var(--alert-red)">EXPIRED ${sticker.expires}</span>` : sticker.expires;
+
+                item.innerHTML = `
+                    <div class="sticker-info">
+                        <div class="sticker-type" style="color: var(--sticker-${sticker.type === 'ALERT' ? 'red' : sticker.type === 'FWD' ? 'blue' : sticker.type === 'HOLD' ? 'orange' : 'green'})">${sticker.type}</div>
+                        <div class="sticker-details">Expires: ${expiresText}</div>
+                        <div class="sticker-details">${sticker.note || 'No note'}</div>
+                    </div>
+                    <button class="btn btn-danger btn-small" onclick="removeSticker(${idx})">×</button>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        function showAddStickerForm() {
+            document.getElementById('addStickerForm').style.display = 'block';
+        }
+
+        function cancelAddSticker() {
+            document.getElementById('addStickerForm').style.display = 'none';
+            document.getElementById('stickerType').value = '';
+            document.getElementById('stickerExpires').value = '';
+            document.getElementById('stickerNote').value = '';
+        }
+
+        function addSticker() {
+            const type = document.getElementById('stickerType').value;
+            const expires = document.getElementById('stickerExpires').value;
+            const note = document.getElementById('stickerNote').value;
+
+            if (!type) {
+                alert('Please select a sticker type');
+                return;
+            }
+
+            if (!currentEditCell.stickers) {
+                currentEditCell.stickers = [];
+            }
+
+            currentEditCell.stickers.push({ type, expires, note });
+            renderStickersList();
+            cancelAddSticker();
+        }
+
+        function removeSticker(idx) {
+            currentEditCell.stickers.splice(idx, 1);
+            renderStickersList();
+        }
+
+        function saveAddress() {
+            const number = document.getElementById('editAddressNum').value;
+            const street = document.getElementById('editStreetName').value;
+            const width = parseInt(document.getElementById('editCellWidth').value);
+
+            if (!number || !street) {
+                alert('Please enter address number and street name');
+                return;
+            }
+
+            currentEditCell.number = number;
+            currentEditCell.street = street;
+            currentEditCell.width = width;
+
+            // Find and update in sampleRoute
+            const existing = sampleRoute.addresses.find(a => a.seq === currentEditCell.seq);
+            if (existing) {
+                Object.assign(existing, currentEditCell);
+            } else {
+                sampleRoute.addresses.push(currentEditCell);
+            }
+
+            renderCase();
+            updateStats();
+            closeEditPanel();
+        }
+
+        function deleteAddress() {
+            if (!confirm('Delete this address?')) return;
+
+            const idx = sampleRoute.addresses.findIndex(a => a.seq === currentEditCell.seq);
+            if (idx !== -1) {
+                sampleRoute.addresses.splice(idx, 1);
+            }
+
+            renderCase();
+            updateStats();
+            closeEditPanel();
+        }
+
+        function updateStats() {
+            const totalCells = wings.reduce((sum, w) => sum + w.cells, 0);
+            const reserved = 6 + 8; // 6 Form 3982 + 8 status codes
+            const usable = totalCells - reserved;
+            const addressCount = sampleRoute.addresses.length;
+
+            document.getElementById('totalCells').textContent = totalCells;
+            document.getElementById('usableCells').textContent = usable;
+            document.getElementById('addressCount').textContent = addressCount;
+
+            // Count alerts
+            const alerts = sampleRoute.addresses.reduce((count, addr) => {
+                return count + addr.stickers.filter(s => isExpired(s.expires)).length;
+            }, 0);
+
+            const badge = document.getElementById('alertBadge');
+            if (alerts > 0) {
+                badge.textContent = `${alerts} ALERT${alerts > 1 ? 'S' : ''}`;
+                badge.style.display = 'inline-block';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+
+        function showStickerPopover(event, sticker, addressSeq, stickerIdx) {
+            const popover = document.getElementById('stickerPopover');
+
+            const expired = isExpired(sticker.expires);
+            const expiresText = expired ? `<span style="color: var(--alert-red)">EXPIRED ${sticker.expires}</span>` : sticker.expires;
+
+            document.getElementById('popoverTitle').textContent = sticker.type;
+            document.getElementById('popoverExpires').innerHTML = `<strong>Expires:</strong> ${expiresText}`;
+            document.getElementById('popoverNote').textContent = sticker.note || 'No note';
+
+            popover.dataset.addressSeq = addressSeq;
+            popover.dataset.stickerIdx = stickerIdx;
+
+            popover.style.left = `${event.clientX + 10}px`;
+            popover.style.top = `${event.clientY + 10}px`;
+            popover.classList.add('show');
+        }
+
+        function hidePopover() {
+            document.getElementById('stickerPopover').classList.remove('show');
+        }
+
+        function editStickerFromPopover() {
+            const addressSeq = parseInt(document.getElementById('stickerPopover').dataset.addressSeq);
+            const address = sampleRoute.addresses.find(a => a.seq === addressSeq);
+            if (address) {
+                openEditPanel(address, null, null);
+            }
+            hidePopover();
+        }
+
+        function removeStickerFromPopover() {
+            const addressSeq = parseInt(document.getElementById('stickerPopover').dataset.addressSeq);
+            const stickerIdx = parseInt(document.getElementById('stickerPopover').dataset.stickerIdx);
+
+            const address = sampleRoute.addresses.find(a => a.seq === addressSeq);
+            if (address) {
+                address.stickers.splice(stickerIdx, 1);
+                renderCase();
+                updateStats();
+            }
+            hidePopover();
+        }
+
+        function showWingMenu(event, wingId) {
+            event.stopPropagation();
+            const menu = document.getElementById('contextMenu');
+            menu.dataset.wingId = wingId;
+            menu.style.left = `${event.clientX}px`;
+            menu.style.top = `${event.clientY}px`;
+            menu.classList.add('show');
+        }
+
+        function hideContextMenu() {
+            document.getElementById('contextMenu').classList.remove('show');
+        }
+
+        function changeEquipment() {
+            const wingId = document.getElementById('contextMenu').dataset.wingId;
+            const wing = wings.find(w => w.id === wingId);
+
+            const types = ['124-D', '143-D', '144-D'];
+            const currentIdx = types.indexOf(wing.type);
+            const nextIdx = (currentIdx + 1) % types.length;
+
+            wing.type = types[nextIdx];
+            wing.cells = types[nextIdx] === '143-D' ? 120 : 240;
+
+            renderCase();
+            updateStats();
+            hideContextMenu();
+        }
+
+        function removeEquipment() {
+            const wingId = document.getElementById('contextMenu').dataset.wingId;
+            if (wings.length <= 1) {
+                alert('Cannot remove last wing');
+                return;
+            }
+
+            const idx = wings.findIndex(w => w.id === wingId);
+            if (idx !== -1) {
+                wings.splice(idx, 1);
+                renderCase();
+                updateStats();
+            }
+            hideContextMenu();
+        }
+
+        function addWing() {
+            const newId = 'wing-' + Date.now();
+            wings.push({
+                id: newId,
+                type: '124-D',
+                cells: 240,
+                position: `Wing ${wings.length + 1}`
+            });
+            renderCase();
+            updateStats();
+            hideContextMenu();
+        }
+
+        function zoomToShelf(wingId, shelfNum) {
+            // Placeholder for zoom functionality
+            console.log(`Zoom to ${wingId} shelf ${shelfNum}`);
+            document.getElementById('breadcrumb').classList.add('show');
+            document.getElementById('modeIndicator').textContent = 'RESIZE MODE';
+            currentMode = 'resize';
+        }
+
+        function exitZoom() {
+            document.getElementById('breadcrumb').classList.remove('show');
+            document.getElementById('modeIndicator').textContent = 'EQUIPMENT MODE';
+            currentMode = 'equipment';
+        }
+
+        // Initialize on load
+        init();
+    </script>
+</body>
+</html>

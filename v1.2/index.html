@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EDIT BOOK ASSIST</title>
+  <link rel="manifest" href="./manifest.json">
+  <meta name="theme-color" content="#daa520">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <link rel="apple-touch-icon" href="./icons/icon-192.svg">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div class="app-container">
+
+    <!-- ===== SIDEBAR NAV ===== -->
+    <nav class="sidebar-nav">
+      <div class="sidebar-header">EDIT BOOK<br>ASSIST</div>
+      <div class="nav-item active" data-screen="equipment">EQUIPMENT</div>
+      <div class="nav-item" data-screen="case-view">CASE VIEW</div>
+      <div class="nav-item" data-screen="edit-book">EDIT BOOK</div>
+      <div class="nav-item" data-screen="streets">STREETS</div>
+      <div class="nav-item" data-screen="settings">SETTINGS</div>
+      <div class="sidebar-divider"></div>
+      <button class="nav-action-btn nav-action-btn--danger" id="btnNewRoute">NEW ROUTE</button>
+      <button class="nav-action-btn" id="btnSaveFile">SAVE FILE</button>
+      <button class="nav-action-btn" id="btnOpenFile">OPEN FILE</button>
+      <input type="file" id="fileInput" accept=".json" style="display:none">
+    </nav>
+
+    <!-- ===== CONTENT AREA ===== -->
+    <div class="content-area">
+
+      <!-- ===== EQUIPMENT SCREEN ===== -->
+      <div class="screen active" data-screen="equipment">
+
+        <div class="screen-header">
+          <div class="screen-title">EQUIPMENT</div>
+          <button class="btn-save" id="btnSave">SAVE</button>
+        </div>
+
+        <div class="equipment-row">
+          <div class="equip-slot" data-slot="0">
+            <div class="equip-label">Left Wing</div>
+            <button class="equip-picker" data-slot="0">
+              <div class="equip-icon"></div>
+              <div class="equip-name">NONE</div>
+              <span class="equip-chevron">&#9662;</span>
+            </button>
+            <div class="equip-body empty"></div>
+          </div>
+          <div class="equip-slot" data-slot="1">
+            <div class="equip-label">Center</div>
+            <button class="equip-picker" data-slot="1">
+              <div class="equip-icon"></div>
+              <div class="equip-name">NONE</div>
+              <span class="equip-chevron">&#9662;</span>
+            </button>
+            <div class="equip-body empty"></div>
+          </div>
+          <div class="equip-slot" data-slot="2">
+            <div class="equip-label">Right Wing</div>
+            <button class="equip-picker" data-slot="2">
+              <div class="equip-icon"></div>
+              <div class="equip-name">NONE</div>
+              <span class="equip-chevron">&#9662;</span>
+            </button>
+            <div class="equip-body empty"></div>
+          </div>
+          <div class="equip-slot" data-slot="3">
+            <div class="equip-label">Extension</div>
+            <button class="equip-picker" data-slot="3">
+              <div class="equip-icon"></div>
+              <div class="equip-name">NONE</div>
+              <span class="equip-chevron">&#9662;</span>
+            </button>
+            <div class="equip-body empty"></div>
+          </div>
+        </div>
+
+        <!-- ===== CASE INFO BAR ===== -->
+        <div class="case-info">
+          <div class="info-section">
+            <div class="info-heading">EQUIPMENT</div>
+            <div class="info-grid" id="infoEquipment">
+              <div class="info-row"><span class="info-label">Left Wing</span><span class="info-value" id="infoSlot0">None</span></div>
+              <div class="info-row"><span class="info-label">Center</span><span class="info-value" id="infoSlot1">None</span></div>
+              <div class="info-row"><span class="info-label">Right Wing</span><span class="info-value" id="infoSlot2">None</span></div>
+              <div class="info-row"><span class="info-label">Extension</span><span class="info-value" id="infoSlot3">None</span></div>
+            </div>
+          </div>
+          <div class="info-section">
+            <div class="info-heading">CELLS</div>
+            <div class="info-grid">
+              <div class="info-row"><span class="info-label">Total Cells</span><span class="info-value" id="infoTotalCells">0</span></div>
+              <div class="info-row"><span class="info-label">Usable Cells</span><span class="info-value" id="infoUsableCells">0</span></div>
+              <div class="info-row"><span class="info-label">Reserved Cells</span><span class="info-value" id="infoReservedCells">0</span></div>
+              <div class="info-row"><span class="info-label">Cells Available</span><span class="info-value" id="infoCellsAvailable">0</span></div>
+            </div>
+          </div>
+          <div class="info-section">
+            <div class="info-heading">RESERVED</div>
+            <div class="info-grid" id="infoReservedDetail">
+              <!-- populated by JS -->
+            </div>
+          </div>
+          <div class="info-section">
+            <div class="info-heading">ADDRESSES</div>
+            <div class="info-grid">
+              <div class="info-row"><span class="info-label">Total Addresses</span><span class="info-value" id="infoAddresses">0</span></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ===== CASE VIEW SCREEN ===== -->
+      <div class="screen" data-screen="case-view">
+
+        <div class="screen-header">
+          <div class="screen-title section-title">CASE VIEW</div>
+          <div class="section-counter">0 / 0</div>
+        </div>
+
+        <div class="section-container">
+          <button class="section-nav-btn prev" disabled>&#9664;</button>
+          <div class="section-content">
+            <div class="empty-state">NO EQUIPMENT CONFIGURED</div>
+          </div>
+          <button class="section-nav-btn next" disabled>&#9654;</button>
+        </div>
+
+      </div>
+
+      <!-- ===== EDIT BOOK SCREEN ===== -->
+      <div class="screen" data-screen="edit-book">
+
+        <div class="screen-header">
+          <div class="screen-title">EDIT BOOK</div>
+          <div class="editbook-actions">
+            <button class="btn-action" id="btnAddRow">+ ADD ROW</button>
+            <button class="btn-action" id="btnBulkImport">BULK IMPORT</button>
+            <button class="btn-action" id="btnApplySequence">APPLY SEQUENCE</button>
+            <button class="btn-primary" id="btnApplyToCase">APPLY TO CASE</button>
+          </div>
+        </div>
+
+        <div class="route-info-bar">
+          <label class="route-field">
+            <span class="route-label">ZIP</span>
+            <input type="text" id="routeZip" maxlength="5" placeholder="00000">
+          </label>
+          <label class="route-field">
+            <span class="route-label">ROUTE #</span>
+            <input type="text" id="routeNum" maxlength="3" placeholder="001">
+          </label>
+          <label class="route-field">
+            <span class="route-label">TYPE</span>
+            <input type="text" id="routeType" maxlength="1" placeholder="R">
+          </label>
+        </div>
+
+        <div id="applyStatus" class="apply-status" style="display:none;"></div>
+
+        <div class="editbook-table-wrap">
+          <table id="editBookTable">
+            <thead>
+              <tr>
+                <th>Seq#</th>
+                <th>Primary Address</th>
+                <th>Complete Street Name</th>
+                <th>SECY ABBR</th>
+                <th>SECY Unit #</th>
+                <th>Delv Type</th>
+                <th>Usg Code</th>
+                <th>No Stat</th>
+                <th>Vac Ind</th>
+                <th>Addr Sort</th>
+                <th>Cell Size</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+
+      </div>
+
+      <!-- ===== STREETS SCREEN ===== -->
+      <div class="screen" data-screen="streets">
+
+        <div class="screen-header">
+          <div class="screen-title">STREETS</div>
+        </div>
+
+        <div class="streets-hint">Colors assigned here fill the bottom band of each cell on that street in the case view.</div>
+
+        <div class="streets-list" id="streetsList">
+          <div class="empty-state">NO ADDRESSES IN EDIT BOOK</div>
+        </div>
+
+      </div>
+
+      <!-- ===== SETTINGS SCREEN ===== -->
+      <div class="screen" data-screen="settings">
+        <div class="screen-header">
+          <div class="screen-title">SETTINGS</div>
+        </div>
+        <div class="settings-presets">
+          <div class="settings-preset-bar">
+            <select id="settingsPresetSelect"></select>
+            <button class="btn-action btn-small" id="btnPresetSave">SAVE</button>
+            <button class="btn-action btn-small" id="btnPresetSaveAs">SAVE AS</button>
+            <button class="btn-action btn-small" id="btnPresetRename">RENAME</button>
+            <button class="btn-action btn-small" id="btnPresetDelete">DELETE</button>
+            <button class="btn-action btn-small" id="btnPresetReset">RESET DEFAULTS</button>
+          </div>
+        </div>
+        <div class="settings-section">
+          <div class="settings-section-header">THEME COLORS</div>
+          <div class="settings-color-grid" id="settingsThemeColors"></div>
+        </div>
+        <div class="settings-section">
+          <div class="settings-section-header">DEFAULT ANNOTATION COLORS</div>
+          <div class="settings-color-grid" id="settingsAnnotationColors"></div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- ===== BULK IMPORT DIALOG ===== -->
+  <div class="dialog" id="bulkImportDialog">
+    <div class="dialog-content">
+      <div class="dialog-header">BULK IMPORT</div>
+      <div class="dialog-body">
+        <p class="dialog-hint">Paste tab-delimited or CSV data. Columns: Seq#, Primary Address, Street Name, SECY ABBR, SECY Unit, Delv Type, Usg Code, No Stat (Y/N), Vac Ind (Y/N), Address Sort, Cell Size</p>
+        <textarea id="bulkImportText" rows="12" placeholder="Paste data here..."></textarea>
+      </div>
+      <div class="dialog-actions">
+        <button class="btn-action" id="btnImportCancel">CANCEL</button>
+        <button class="btn-primary" id="btnImportConfirm">IMPORT</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== ADDRESS DETAIL OVERLAY ===== -->
+  <div class="address-detail-overlay" id="addressDetailOverlay">
+    <div class="address-detail-panel">
+
+      <!-- Header -->
+      <div class="detail-header">
+        <button class="btn-detail-back" id="btnDetailBack">&#9664; BACK TO SHELF</button>
+        <div class="detail-title" id="detailTitle">ADDRESS DETAIL</div>
+        <button class="btn-detail-close" id="btnDetailClose">&#10005;</button>
+      </div>
+
+      <!-- Address Info (read-only) -->
+      <div class="detail-address-info" id="detailAddressInfo">
+        <!-- populated by JS -->
+      </div>
+
+      <!-- Scrollable content area -->
+      <div class="detail-body">
+
+        <!-- Whole-Address Highlight Section -->
+        <div class="detail-section">
+          <div class="detail-section-header">HIGHLIGHT</div>
+          <div class="highlight-controls" id="highlightControls">
+            <div class="highlight-row">
+              <label class="highlight-field">
+                <span class="highlight-label">BG COLOR</span>
+                <input type="color" id="highlightBgColor" value="#000000">
+              </label>
+              <label class="highlight-field">
+                <span class="highlight-label">TITLE</span>
+                <input type="text" id="highlightTitle" placeholder="e.g. ON HOLD" maxlength="30">
+              </label>
+              <button class="btn-action btn-small" id="btnHighlightClear">CLEAR</button>
+            </div>
+            <div class="highlight-row">
+              <label class="highlight-field">
+                <span class="highlight-label">START</span>
+                <input type="date" id="highlightStartDate">
+              </label>
+              <label class="highlight-field">
+                <span class="highlight-label">END</span>
+                <input type="date" id="highlightEndDate">
+              </label>
+            </div>
+            <label class="highlight-field highlight-notes-field">
+              <span class="highlight-label">NOTES</span>
+              <textarea id="highlightNotes" rows="2" placeholder="Additional info..."></textarea>
+            </label>
+          </div>
+        </div>
+
+        <!-- Tags/Annotations Section -->
+        <div class="detail-section">
+          <div class="detail-section-header">TAGS</div>
+          <div class="tags-list" id="tagsList">
+            <!-- populated by JS -->
+          </div>
+          <button class="btn-action" id="btnAddTag">+ ADD TAG</button>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+
+  <!-- ===== NEW ROUTE CONFIRMATION DIALOG ===== -->
+  <div class="dialog" id="newRouteDialog">
+    <div class="dialog-content">
+      <div class="dialog-header">NEW ROUTE</div>
+      <div class="dialog-body">
+        <p class="dialog-warning">WARNING: All unsaved data will be permanently lost.</p>
+        <p class="dialog-hint">This will clear all equipment, addresses, annotations, and street colors. Make sure you have saved your current route using SAVE FILE before proceeding.</p>
+      </div>
+      <div class="dialog-actions">
+        <button class="btn-action" id="btnNewRouteCancel">CANCEL</button>
+        <button class="btn-primary btn-danger" id="btnNewRouteConfirm">CLEAR &amp; RELOAD</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-container" id="toastContainer"></div>
+  <script type="module" src="app.js"></script>
+</body>
+</html>
