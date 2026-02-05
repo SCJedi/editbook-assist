@@ -3254,9 +3254,10 @@ body {
     min-width: max-content;
   }
 
-  /* Wing divider styling for mobile */
+  /* Wing divider styling for mobile - thin line only */
   .wing-divider {
-    padding: 0 6px;
+    padding: 0 4px;
+    min-width: 12px; /* Narrower - just thin amber line */
   }
 
   .wing-divider::before {
@@ -3265,8 +3266,13 @@ body {
   }
 
   .wing-divider-label {
-    font-size: 10px;
-    padding: 6px 2px;
+    display: none; /* Hide vertical label on mobile - just show thin line */
+  }
+
+  /* Hide street names on mobile - too cluttered in zoomed view */
+  .addr-street,
+  .street-name {
+    display: none;
   }
 
   /* Wing header styling for mobile */
