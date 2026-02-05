@@ -295,12 +295,8 @@ body {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding-right: 16px; /* Clear space before wing divider */
-  overflow: hidden; /* Contain content within wing */
-}
-
-.case-wing:last-child {
-  padding-right: 0; /* No padding after last wing */
+  /* Wing expands to fit its cells naturally */
+  /* Divider provides spacing between wings */
 }
 
 .wing-header {
@@ -366,14 +362,14 @@ body {
    ============================================================ */
 
 .case-visual {
-  flex: 1;
+  flex: 0 0 auto; /* Don't grow/shrink, size to content */
   display: flex;
   flex-direction: column;
   gap: 0;
   border: 2px solid var(--amber-dim);
   border-radius: var(--radius);
   background: var(--bg);
-  overflow: hidden; /* Contain cells within case border */
+  /* Expands to fit all cells */
 }
 
 .case-shelf-row {
@@ -430,16 +426,16 @@ body {
 
 /* All cells in a single row */
 .case-shelf-cells {
-  flex: 1;
+  flex: 0 0 auto; /* Size to content, don't shrink */
   display: flex;
-  overflow: hidden; /* Contain cells within shelf */
+  /* Expands to fit all cells */
 }
 
 .case-cell {
   position: relative;
-  flex: 1 1 50px; /* Equal share, minimum 50px per cell */
-  min-width: 50px;
-  overflow: hidden; /* Contain address within cell */
+  flex: 0 0 50px; /* Fixed 50px per cell, no grow/shrink */
+  width: 50px;
+  overflow: hidden; /* Clip long addresses within cell */
   /* No transition for performance — instant hover feedback */
 }
 
@@ -604,12 +600,13 @@ body {
 /* Reuse .case-cell inside zoom rows — same tick marks, same style */
 .shelf-zoom-row .case-cell {
   position: relative;
-  flex: 1;
-  min-width: 0;
+  flex: 0 0 70px; /* Fixed 70px per cell in zoom view */
+  width: 70px;
   display: flex;
   align-items: flex-end;
   justify-content: center;
   padding-bottom: 2px;
+  overflow: hidden;
 }
 
 .cell-num {

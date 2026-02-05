@@ -306,9 +306,8 @@ function renderAllWingsContinuous() {
       allWingsHTML += `<div class="wing-divider"><span class="wing-divider-label">${positionName}</span></div>`;
     }
 
-    // Wing container - calculate width based on cells (shelf label 64px + cells × 50px min)
-    const wingWidth = 64 + (spec.cellsPerShelf * 50);
-    allWingsHTML += `<div class="case-wing" data-wing-idx="${wingIdx}" data-slot-idx="${slotIdx}" style="min-width: ${wingWidth}px;">`;
+    // Wing container - expands to fit cells naturally
+    allWingsHTML += `<div class="case-wing" data-wing-idx="${wingIdx}" data-slot-idx="${slotIdx}">`;
 
     // Info bar above the case (includes position name for alignment)
     let reservedNotes = '';
@@ -595,9 +594,8 @@ function zoomIntoShelfContinuous(shelfNum) {
       allWingsHTML += `<div class="wing-divider"><span class="wing-divider-label">${positionName}</span></div>`;
     }
 
-    // Wing container - calculate width for zoom (sidebar 80px + 10 cells × 70px)
-    const zoomWingWidth = 80 + (10 * 70);
-    allWingsHTML += `<div class="case-wing shelf-zoom-wing" data-wing-idx="${wingIdx}" data-slot-idx="${slotIdx}" style="min-width: ${zoomWingWidth}px;">`;
+    // Wing container - expands to fit cells naturally
+    allWingsHTML += `<div class="case-wing shelf-zoom-wing" data-wing-idx="${wingIdx}" data-slot-idx="${slotIdx}">`;
 
     // Build the zoomed shelf rows for this wing
     const rowCount = Math.ceil(spec.cellsPerShelf / 10);
