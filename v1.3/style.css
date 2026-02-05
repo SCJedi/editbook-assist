@@ -288,6 +288,11 @@ body {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  padding-right: 16px; /* Clear space before wing divider */
+}
+
+.case-wing:last-child {
+  padding-right: 0; /* No padding after last wing */
 }
 
 .wing-header {
@@ -309,9 +314,10 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  padding: 0 4px;
+  padding: 0 12px; /* Space on both sides of divider line */
   flex-shrink: 0;
   align-self: stretch;
+  min-width: 40px; /* Ensure divider has clear presence */
 }
 
 .wing-divider::before {
