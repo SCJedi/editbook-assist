@@ -595,7 +595,7 @@ body {
 .shelf-zoom-row {
   flex: 1;
   display: flex;
-  min-height: 0;
+  min-height: 80px; /* Taller cells in zoom view */
   min-width: 0; /* Allow shrinking */
   overflow: hidden; /* Clip content at row boundary */
   border-bottom: 2px solid var(--amber-dim);
@@ -626,7 +626,8 @@ body {
 
 /* Address blocks and street groups inside zoom rows */
 .shelf-zoom-row .addr-block {
-  min-height: 0;
+  min-height: 60px; /* Taller address blocks in zoom */
+  justify-content: center;
 }
 
 .shelf-zoom-row .addr-num {
@@ -3291,12 +3292,10 @@ body {
     display: none; /* Hide vertical label on mobile - just show thin line */
   }
 
-  /* Hide street names on mobile - too cluttered */
+  /* Street names visible on mobile - smaller font to fit */
   .addr-street,
-  .street-name,
-  .shelf-zoom-row .addr-street,
-  .shelf-zoom-row .street-name {
-    display: none !important;
+  .street-name {
+    font-size: 10px;
   }
 
   /* Wing header styling for mobile */
