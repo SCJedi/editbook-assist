@@ -287,7 +287,7 @@ body {
   flex-direction: row;
   flex-wrap: nowrap;
   gap: 0;
-  align-items: stretch; /* Align shelves across all wings */
+  align-items: flex-start; /* Align to top - wings may have different heights */
 }
 
 .case-wing {
@@ -295,8 +295,8 @@ body {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  /* Wing expands to fit its cells naturally */
-  /* Divider provides spacing between wings */
+  /* Wing width is set via inline style based on cell count */
+  /* --wing-cells and --cell-width CSS vars control sizing */
 }
 
 .wing-header {
@@ -370,6 +370,7 @@ body {
   border-radius: var(--radius);
   background: var(--bg);
   overflow: hidden; /* Clip content at case border */
+  /* Width calculated from cells: shelf-label-width + (cells * cell-width) */
 }
 
 .case-shelf-row {
@@ -377,6 +378,8 @@ body {
   display: flex;
   align-items: stretch;
   min-height: 48px;
+  min-width: 0; /* Allow shrinking */
+  overflow: hidden; /* Clip content at row boundary */
   border-bottom: 2px solid var(--amber-dim);
 }
 
@@ -426,15 +429,16 @@ body {
 
 /* All cells in a single row */
 .case-shelf-cells {
-  flex: 0 0 auto; /* Size to content, don't shrink */
+  flex: 1 1 auto; /* Fill available width */
   display: flex;
   overflow: hidden; /* Clip at shelf boundary */
+  /* Width is determined by parent wing's calculated width */
 }
 
 .case-cell {
   position: relative;
-  flex: 0 0 55px; /* Fixed 55px per cell - fits 4-5 digit addresses */
-  width: 55px;
+  flex: 1 1 0; /* Equal flex basis, grows to fill */
+  min-width: 0; /* Allow shrinking below content size */
   overflow: hidden; /* Clip long addresses within cell */
   /* No transition for performance — instant hover feedback */
 }
@@ -584,12 +588,16 @@ body {
   display: flex;
   flex-direction: column;
   gap: 0;
+  min-width: 0; /* Allow shrinking */
+  overflow: hidden;
 }
 
 .shelf-zoom-row {
   flex: 1;
   display: flex;
   min-height: 0;
+  min-width: 0; /* Allow shrinking */
+  overflow: hidden; /* Clip content at row boundary */
   border-bottom: 2px solid var(--amber-dim);
 }
 
@@ -600,8 +608,8 @@ body {
 /* Reuse .case-cell inside zoom rows — same tick marks, same style */
 .shelf-zoom-row .case-cell {
   position: relative;
-  flex: 0 0 70px; /* Fixed 70px per cell in zoom view */
-  width: 70px;
+  flex: 1 1 0; /* Flexible - fills row evenly */
+  min-width: 0; /* Allow shrinking */
   display: flex;
   align-items: flex-end;
   justify-content: center;
@@ -662,8 +670,9 @@ body {
   align-items: center;
   justify-content: flex-start;
   padding: 2px 1px 0;
-  min-width: 0;
-  overflow: hidden;
+  min-width: 0; /* Allow shrinking below content size */
+  max-width: 100%; /* Never exceed container */
+  overflow: hidden; /* Clip overflowing content */
 }
 
 .addr-num {
@@ -713,13 +722,17 @@ body {
   position: relative;
   display: flex;
   flex-direction: column;
-  min-width: 0;
+  min-width: 0; /* Allow shrinking */
+  max-width: 100%; /* Never exceed container */
+  overflow: hidden;
 }
 
 .street-addrs {
   flex: 1;
   display: flex;
   align-items: stretch;
+  min-width: 0; /* Allow children to shrink */
+  overflow: hidden;
 }
 
 /* Shared street name across the group
@@ -2743,6 +2756,11 @@ body {
 
   .section-counter { font-size: 16px; }
 
+  /* Shelf label narrower on mobile - matches JS SHELF_LABEL_WIDTH constant */
+  .case-shelf-label {
+    width: 48px;
+  }
+
   /* Edit book: horizontal scroll table */
   .editbook-actions {
     flex-wrap: wrap;
@@ -3129,29 +3147,30 @@ body {
     font-size: 28px;
   }
 
-  /* Keep case visual at natural size in landscape too */
+  /* Case visual width comes from explicit calculation, not content */
   .case-visual,
   .case-visual.shelf-zoom,
-  .section-content,
   .shelf-zoom-rows {
-    min-width: max-content;
-    width: max-content;
+    /* Width set via inline style or CSS vars */
+  }
+
+  .section-content {
+    /* Section content wraps the wings container */
   }
 }
 
 /* --- Case View Portrait: Enable scroll and scale --- */
 @media (max-width: 767px) and (orientation: portrait) {
-  /* Case body scrollable - content stays full size */
+  /* Case body scrollable */
   .case-body {
     overflow-x: auto;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
   }
 
-  /* Section container stays natural width - no shrinking */
+  /* Section container: width determined by wing calculations */
   .section-container {
-    min-width: max-content;
-    width: max-content;
+    /* Width comes from wings container which has explicit widths */
   }
 
   /* Keep nav buttons accessible */
@@ -3180,7 +3199,7 @@ body {
     display: none !important;
   }
 
-  /* Case body: horizontal scroll container at full size */
+  /* Case body: horizontal scroll container */
   .case-body {
     overflow-x: auto;
     overflow-y: auto;
@@ -3188,62 +3207,59 @@ body {
     position: relative;
   }
 
-  /* Section container: natural width, no shrinking */
+  /* Section container: allows horizontal scroll */
   .section-container {
-    min-width: max-content;
-    width: max-content;
     flex-shrink: 0;
   }
 
-  /* Section content: natural width, scrollable */
+  /* Section content: contains the wings container */
   .section-content {
-    overflow-x: auto;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
+    overflow-x: visible;
+    overflow-y: visible;
     position: relative;
-    min-width: max-content;
-    width: max-content;
   }
 
-  /* Case visual: natural full size, no shrinking */
+  /* Case visual: width set via inline style */
   .case-visual {
-    min-width: max-content;
-    width: max-content;
+    /* Width calculated from: shelf-label + (cells * cell-width) */
   }
 
-  /* Shelf zoom: natural full size */
+  /* Shelf zoom: width set via inline style */
   .case-visual.shelf-zoom {
-    min-width: max-content;
-    width: max-content;
+    /* Width calculated from: sidebar + (cells * cell-width) */
   }
 
   .shelf-zoom-rows {
-    min-width: max-content;
-    width: max-content;
+    flex: 1;
   }
 
-  /* Case shelf cells: keep natural width */
+  /* Case shelf cells: fill the row */
   .case-shelf-cells {
-    min-width: max-content;
+    flex: 1;
+    min-width: 0;
   }
 
-  /* Cells stay full readable size - no shrinking */
+  /* Cells use flex to fill space evenly */
   .case-cell {
-    min-width: 40px; /* Minimum readable cell width */
+    flex: 1 1 0;
+    min-width: 0;
   }
 
-  /* Address blocks stay full size */
+  /* Address blocks fill their flex allocation */
   .addr-block {
-    min-width: 50px; /* Minimum readable address width */
+    min-width: 0;
+    max-width: 100%;
   }
 
-  /* Shelf zoom cells larger for readability */
+  /* Shelf zoom cells */
   .shelf-zoom-row .case-cell {
-    min-width: 60px;
+    flex: 1 1 0;
+    min-width: 0;
   }
 
   .shelf-zoom-row .addr-block {
-    min-width: 70px;
+    min-width: 0;
+    max-width: 100%;
   }
 
   /* Continuous wing container for mobile */
@@ -3251,13 +3267,13 @@ body {
     display: flex;
     flex-direction: row;
     flex-wrap: nowrap;
-    min-width: max-content;
     gap: 0;
   }
 
+  /* Wing width set via inline style */
   .case-wing {
     flex: 0 0 auto;
-    min-width: max-content;
+    /* width set inline based on cellsPerShelf * cellWidth */
   }
 
   /* Wing divider styling for mobile - thin line only */

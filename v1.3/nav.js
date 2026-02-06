@@ -291,6 +291,11 @@ function renderAllWingsContinuous() {
     counterEl.style.display = 'none';
   }
 
+  // Cell sizing constants for mobile overview
+  // Note: .case-shelf-label width is 48px on mobile landscape (see style.css)
+  const CELL_WIDTH = 55; // pixels per cell in overview mode
+  const SHELF_LABEL_WIDTH = 48; // shelf label column width (matches CSS .case-shelf-label on mobile)
+
   // Build HTML for all wings in a continuous row
   let allWingsHTML = '<div class="case-wings-container">';
 
@@ -306,8 +311,11 @@ function renderAllWingsContinuous() {
       allWingsHTML += `<div class="wing-divider"><span class="wing-divider-label">${positionName}</span></div>`;
     }
 
-    // Wing container - expands to fit cells naturally
-    allWingsHTML += `<div class="case-wing" data-wing-idx="${wingIdx}" data-slot-idx="${slotIdx}">`;
+    // Calculate wing width: shelf label + (cells * cell width)
+    const wingWidth = SHELF_LABEL_WIDTH + (spec.cellsPerShelf * CELL_WIDTH);
+
+    // Wing container with explicit width
+    allWingsHTML += `<div class="case-wing" data-wing-idx="${wingIdx}" data-slot-idx="${slotIdx}" style="width:${wingWidth}px">`;
 
     // Info bar above the case (includes position name for alignment)
     let reservedNotes = '';
@@ -324,8 +332,8 @@ function renderAllWingsContinuous() {
     if (reservedNotes) allWingsHTML += `<span class="cib-item cib-reserved">${reservedNotes}</span>`;
     allWingsHTML += `</div>`;
 
-    // Build shelf rows
-    allWingsHTML += '<div class="case-visual">';
+    // Build shelf rows - case-visual width matches wing width
+    allWingsHTML += `<div class="case-visual" style="width:${wingWidth}px">`;
     for (let shelfNum = SHELF_COUNT; shelfNum >= 1; shelfNum--) {
       allWingsHTML += `<div class="case-shelf-row">`;
       allWingsHTML += `<button class="case-shelf-label" data-shelf="${shelfNum}" data-wing-idx="${wingIdx}" title="Zoom into shelf ${shelfNum}">S${shelfNum}<span class="shelf-zoom-icon">&#x2315;</span></button>`;
@@ -556,6 +564,11 @@ function zoomIntoShelfContinuous(shelfNum) {
 
   const ROW_LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
+  // Cell sizing constants for mobile zoom view
+  // Note: sidebar width is 48px on mobile (see style.css .shelf-zoom-sidebar)
+  const ZOOM_CELL_WIDTH = 70; // pixels per cell in zoom mode (10 cells per row)
+  const ZOOM_SIDEBAR_WIDTH = 48; // sidebar column width (matches CSS on mobile)
+
   // Build continuous zoomed shelf view for all wings
   let allWingsHTML = '<div class="case-wings-container shelf-zoom-container">';
 
@@ -594,13 +607,17 @@ function zoomIntoShelfContinuous(shelfNum) {
       allWingsHTML += `<div class="wing-divider"><span class="wing-divider-label">${positionName}</span></div>`;
     }
 
-    // Wing container - expands to fit cells naturally
-    allWingsHTML += `<div class="case-wing shelf-zoom-wing" data-wing-idx="${wingIdx}" data-slot-idx="${slotIdx}">`;
-
     // Build the zoomed shelf rows for this wing
     const rowCount = Math.ceil(spec.cellsPerShelf / 10);
 
-    allWingsHTML += '<div class="case-visual shelf-zoom">';
+    // Calculate wing width: sidebar + (10 cells per row * cell width)
+    // For shelf zoom, each row has 10 cells max
+    const zoomWingWidth = ZOOM_SIDEBAR_WIDTH + (10 * ZOOM_CELL_WIDTH);
+
+    // Wing container with explicit width
+    allWingsHTML += `<div class="case-wing shelf-zoom-wing" data-wing-idx="${wingIdx}" data-slot-idx="${slotIdx}" style="width:${zoomWingWidth}px">`;
+
+    allWingsHTML += `<div class="case-visual shelf-zoom" style="width:${zoomWingWidth}px">`;
 
     // Sidebar with row labels
     allWingsHTML += '<div class="shelf-zoom-sidebar">';
