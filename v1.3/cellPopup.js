@@ -4,7 +4,7 @@
  * EDIT button opens full detail overlay.
  */
 
-import { getAddresses, getPlacedAddresses } from './editbook.js';
+import { getAddresses, getPlacedAddresses, resizeAddress } from './editbook.js';
 import { getAnnotationsForAddress, evaluateAlerts, snoozeAlert, acknowledgeAlert, loadAnnotations, saveAnnotations } from './annotations.js';
 import { openDetail } from './addressDetail.js';
 
@@ -68,6 +68,9 @@ export function initCellPopup(refreshCallback) {
   // Delegated click handlers for alert buttons
   overlayEl.querySelector('.cell-modal-alerts').addEventListener('click', handleAlertClick);
 
+  // Delegated click handlers for cell width buttons
+  overlayEl.querySelector('.cell-modal-body').addEventListener('click', handleWidthClick);
+
   // Dismiss on Escape
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && overlayEl.classList.contains('visible')) {
@@ -109,6 +112,17 @@ export function showCellPopup(addrId, fromZoom = false) {
     html += `<div class="cell-modal-row"><span class="cell-modal-label">Cell</span><span class="cell-modal-value">${placement.startCell}</span></div>`;
     html += `<div class="cell-modal-row"><span class="cell-modal-label">Shelf</span><span class="cell-modal-value">S${placement.shelfNum}</span></div>`;
   }
+
+  // Cell width control (how many cells this address spans)
+  const currentWidth = addr.cellSize || 1;
+  html += `<div class="cell-modal-row cell-width-row">
+    <span class="cell-modal-label">Width</span>
+    <span class="cell-modal-value cell-width-control">
+      <button class="cell-width-btn" data-action="decrease">−</button>
+      <span class="cell-width-value">${currentWidth}</span>
+      <button class="cell-width-btn" data-action="increase">+</button>
+    </span>
+  </div>`;
 
   if (addr.delvType) {
     html += `<div class="cell-modal-row"><span class="cell-modal-label">Delv Type</span><span class="cell-modal-value">${esc(addr.delvType)}</span></div>`;
@@ -203,6 +217,37 @@ function buildAlertsSection(addrId, annotations) {
 /**
  * Handle clicks on alert buttons
  */
+/**
+ * Handle cell width +/- button clicks
+ */
+function handleWidthClick(e) {
+  const btn = e.target.closest('.cell-width-btn');
+  if (!btn || !currentAddrId) return;
+
+  const addresses = getAddresses();
+  const addr = addresses.find(a => a.id === currentAddrId);
+  if (!addr) return;
+
+  const currentWidth = addr.cellSize || 1;
+  const action = btn.dataset.action;
+  let newWidth = currentWidth;
+
+  if (action === 'increase') {
+    newWidth = currentWidth + 1;
+  } else if (action === 'decrease' && currentWidth > 1) {
+    newWidth = currentWidth - 1;
+  }
+
+  if (newWidth !== currentWidth) {
+    resizeAddress(currentAddrId, newWidth);
+    // Update display
+    const valueEl = overlayEl.querySelector('.cell-width-value');
+    if (valueEl) valueEl.textContent = newWidth;
+    // Refresh case view
+    if (onRefreshCb) onRefreshCb(isZoomView);
+  }
+}
+
 function handleAlertClick(e) {
   if (!currentAddrId) return;
 
