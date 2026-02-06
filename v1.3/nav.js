@@ -137,6 +137,19 @@ export function initNav() {
     }, 150);
   });
 
+  // Edit mode toggle for mobile cell resizing
+  const editModeBtn = document.getElementById('btnEditMode');
+  if (editModeBtn) {
+    editModeBtn.addEventListener('click', () => {
+      const caseBody = document.querySelector('.case-body');
+      const isActive = editModeBtn.classList.toggle('active');
+      if (caseBody) {
+        caseBody.classList.toggle('edit-mode', isActive);
+      }
+      editModeBtn.textContent = isActive ? 'DONE' : 'RESIZE';
+    });
+  }
+
   // Set initial screen
   switchToScreen('equipment');
 }
@@ -159,10 +172,15 @@ function handleDelegatedClick(e) {
   showCellPopup(addrId, zoomedShelf !== null);
 }
 
+// Check if edit mode is active
+function isEditMode() {
+  return document.querySelector('.case-body.edit-mode') !== null;
+}
+
 // Delegated mousedown handler for drag handles
 function handleDelegatedMousedown(e) {
-  // On mobile (narrow screens), disable drag to allow native scroll
-  if (window.innerWidth <= 767) return;
+  // On mobile, only allow drag in edit mode
+  if (window.innerWidth <= 767 && !isEditMode()) return;
 
   const handle = e.target.closest('.drag-handle');
   if (!handle) return;
@@ -171,8 +189,8 @@ function handleDelegatedMousedown(e) {
 
 // Delegated touchstart handler for drag handles
 function handleDelegatedTouchstart(e) {
-  // On mobile (narrow screens), disable drag to allow native scroll
-  if (window.innerWidth <= 767) return;
+  // On mobile, only allow drag in edit mode
+  if (window.innerWidth <= 767 && !isEditMode()) return;
 
   const handle = e.target.closest('.drag-handle');
   if (!handle) return;
@@ -792,8 +810,8 @@ function renderDividerHTML(seg) {
 // Drag handlers now use event delegation (attached once in initNav)
 
 function startDrag(e) {
-  // Double-check: on mobile, don't allow drag - let native scroll work
-  if (window.innerWidth <= 767) return;
+  // On mobile, only allow drag in edit mode
+  if (window.innerWidth <= 767 && !isEditMode()) return;
 
   e.preventDefault();
   e.stopPropagation();

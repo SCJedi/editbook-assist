@@ -173,11 +173,52 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
   padding: 12px 24px;
   background: var(--bg-panel);
   border-bottom: 1px solid var(--border);
   border-radius: 0 0 var(--radius) var(--radius);
   flex-shrink: 0;
+}
+
+/* Edit/Resize mode toggle button */
+.edit-mode-toggle {
+  padding: 6px 12px;
+  font-family: var(--font);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.edit-mode-toggle:hover {
+  color: var(--amber);
+  border-color: var(--amber-dim);
+}
+
+.edit-mode-toggle.active {
+  color: var(--bg);
+  background: var(--amber);
+  border-color: var(--amber);
+}
+
+/* Edit mode - show larger drag handles */
+.edit-mode .drag-handle {
+  display: block !important;
+  width: 24px;
+  background: var(--amber-dim);
+  opacity: 0.7;
+}
+
+.edit-mode .addr-divider.draggable {
+  min-width: 20px;
+  background: rgba(218, 165, 32, 0.15);
+  cursor: col-resize;
 }
 
 .case-body {
@@ -595,7 +636,7 @@ body {
 .shelf-zoom-row {
   flex: 1;
   display: flex;
-  min-height: 80px; /* Taller cells in zoom view */
+  min-height: 120px; /* Tall cells in zoom view */
   min-width: 0; /* Allow shrinking */
   overflow: hidden; /* Clip content at row boundary */
   border-bottom: 2px solid var(--amber-dim);
@@ -626,8 +667,18 @@ body {
 
 /* Address blocks and street groups inside zoom rows */
 .shelf-zoom-row .addr-block {
-  min-height: 60px; /* Taller address blocks in zoom */
-  justify-content: center;
+  height: 100%;
+  justify-content: flex-start; /* Numbers at top */
+  padding-top: 4px;
+}
+
+/* Street name at bottom of cell in zoom view */
+.shelf-zoom-row .addr-street {
+  position: absolute;
+  bottom: 18px; /* Above tick marks */
+  left: 0;
+  right: 0;
+  font-size: 14px;
 }
 
 .shelf-zoom-row .addr-num {
@@ -638,12 +689,12 @@ body {
   font-size: 15px;
 }
 
-.shelf-zoom-row .addr-street {
-  font-size: 17px;
-}
-
 .shelf-zoom-row .street-name {
-  font-size: 17px;
+  position: absolute;
+  bottom: 18px;
+  left: 0;
+  right: 0;
+  font-size: 14px;
 }
 
 .shelf-zoom-row .street-group {
